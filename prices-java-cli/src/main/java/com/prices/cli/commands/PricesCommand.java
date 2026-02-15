@@ -10,9 +10,15 @@ import java.io.IOException;
 
 @Command(
     name = "prices",
-    description = "Prices CLI - Deploy and manage your WinVMJ applications.",
-    version = "1.0.0",
+    description = "Prices CLI (Java Edition) - Deploy and manage your WinVMJ applications.",
+    version = "1.0.0-java",
     mixinStandardHelpOptions = true,
+    header = {
+        "",
+        "@|bold,cyan Prices CLI - Java Edition|@",
+        "@|yellow Java Runtime: ${java.version}|@",
+        ""
+    },
     subcommands = {
         // Auth
         LoginCommand.class,

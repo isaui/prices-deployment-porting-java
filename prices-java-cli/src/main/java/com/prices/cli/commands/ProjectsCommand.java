@@ -40,8 +40,8 @@ public class ProjectsCommand implements Callable<Integer> {
                 return 0;
             }
 
-            System.out.printf("%-20s %-15s %-30s %-30s%n", "SLUG", "STATUS", "FRONTEND", "BACKEND");
-            System.out.println("----------------------------------------------------------------------------------------------------");
+            System.out.printf("%-20s %-15s %-30s %-30s %-30s%n", "SLUG", "STATUS", "FRONTEND", "BACKEND", "MONITORING");
+            System.out.println("-".repeat(130));
             
             for (Project p : projects) {
                 String frontend = "-";
@@ -57,12 +57,22 @@ public class ProjectsCommand implements Callable<Integer> {
                 } else if (p.isDefaultBackendActive() && p.getDefaultBackendURL() != null) {
                     backend = UrlUtil.fullUrl(p.getDefaultBackendURL());
                 }
+                
+                String monitoring = "-";
+                if (p.isNeedMonitoringExposed()) {
+                    if (p.isCustomMonitoringActive() && p.getCustomMonitoringURL() != null) {
+                        monitoring = UrlUtil.fullUrl(p.getCustomMonitoringURL());
+                    } else if (p.isDefaultMonitoringActive() && p.getDefaultMonitoringURL() != null) {
+                        monitoring = UrlUtil.fullUrl(p.getDefaultMonitoringURL());
+                    }
+                }
 
-                System.out.printf("%-20s %-15s %-30s %-30s%n", 
+                System.out.printf("%-20s %-15s %-30s %-30s %-30s%n", 
                     p.getSlug(), 
                     p.getStatus(), 
                     truncate(frontend, 30), 
-                    truncate(backend, 30)
+                    truncate(backend, 30),
+                    truncate(monitoring, 30)
                 );
             }
             

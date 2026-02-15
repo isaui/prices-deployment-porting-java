@@ -1,0 +1,33 @@
+micronaut:
+  application:
+    name: prices-java-api
+
+  security:
+    authentication: bearer
+    token:
+      jwt:
+        enabled: true
+        signatures:
+          secret:
+            generator:
+              secret: "${JWT_SECRET:your-secret-key-here-must-be-at-least-256-bits-long-for-hs256}"
+
+netty:
+  default:
+    allocator:
+      max-order: 3
+
+datasources:
+  default:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:prices_deployment}
+    username: ${DB_USER:prices}
+    password: ${DB_PASSWORD:prices123}
+    driverClassName: org.postgresql.Driver
+
+jpa:
+  default:
+    properties:
+      hibernate:
+        hbm2ddl:
+          auto: update
+        show_sql: true

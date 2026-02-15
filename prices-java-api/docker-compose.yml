@@ -1,0 +1,84 @@
+version: '3.8'
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: prices-deployment-api
+    ports:
+      - "${PORT:-8080}:8080"
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=${DB_USER:-prices}
+      - DB_PASSWORD=${DB_PASSWORD:-prices123}
+      - DB_NAME=${DB_NAME:-prices_deployment}
+      - JWT_SECRET=${JWT_SECRET:-your-secret-key-here}
+      - PRICES_DOMAIN=${PRICES_DOMAIN:-prices.dev}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./docker-vol/deployments:/var/prices/deployments
+      - ./docker-vol/nginx/conf.d:/var/prices/nginx/conf.d
+    depends_on:
+      postgres:
+        condition: service_healthy
+      nginx:
+        condition: service_started
+    networks:
+      - prices-network
+      - prices-proxy-network
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: prices-postgres
+    environment:
+      - POSTGRES_USER=${DB_USER:-prices}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-prices123}
+      - POSTGRES_DB=${DB_NAME:-prices_deployment}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - ./docker-vol/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-prices} -d ${DB_NAME:-prices_deployment}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - prices-network
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:alpine
+    container_name: prices-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d/static:ro
+      - ./docker-vol/nginx/conf.d:/etc/nginx/conf.d/dynamic
+      - ./docker-vol/nginx/certs:/etc/nginx/certs
+    networks:
+      - prices-proxy-network
+    restart: unless-stopped
+
+  portainer:
+    image: portainer/portainer-ce:latest
+    container_name: prices-portainer
+    command: -H unix:///var/run/docker.sock
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./docker-vol/portainer_data:/data
+    networks:
+      - prices-proxy-network
+    restart: unless-stopped
+
+networks:
+  prices-network:
+    driver: bridge
+  prices-proxy-network:
+    driver: bridge
+    name: prices-proxy-network

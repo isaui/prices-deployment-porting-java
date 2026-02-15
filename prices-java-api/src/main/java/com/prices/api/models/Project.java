@@ -1,7 +1,10 @@
 package com.prices.api.models;
 
+import io.hypersistence.utils.hibernate.type.json.JsonType;
 import jakarta.persistence.*;
 import lombok.Data;
+import org.hibernate.annotations.Type;
+
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -51,7 +54,7 @@ public class Project {
     @Column(name = "user_id", nullable = false)
     private Long userId;
 
-    @Convert(converter = com.prices.api.models.converters.EnvVarsConverter.class)
+    @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")
     private Map<String, String> envVars;
 

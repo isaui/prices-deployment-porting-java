@@ -22,7 +22,7 @@ public class UserHandler {
     public HttpResponse<?> getAll() {
         try {
             List<User> users = userService.getAll();
-            return HttpResponse.ok(ApiResponse.success("Users retrieved successfully", new UserListResponse(MapperUtils.toUserListResponse(users))));
+            return HttpResponse.ok(ApiResponse.success("Users retrieved successfully", MapperUtils.toUserListResponse(users)));
         } catch (Exception e) {
             return HttpResponse.serverError(ErrorResponse.error("Failed to get users"));
         }

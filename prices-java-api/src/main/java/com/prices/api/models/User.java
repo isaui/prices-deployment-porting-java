@@ -2,12 +2,14 @@ package com.prices.api.models;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.ToString;
 import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
 @Entity
 @Table(name = "users")
+@ToString(exclude = "projects")
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

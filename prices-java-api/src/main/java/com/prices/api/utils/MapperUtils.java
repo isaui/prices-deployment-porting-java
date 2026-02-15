@@ -7,7 +7,7 @@ import com.prices.api.models.DeploymentHistory;
 import com.prices.api.models.Project;
 import com.prices.api.models.User;
 
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -48,8 +48,8 @@ public class MapperUtils {
     }
 
     public static List<ProjectResponse> toProjectListResponse(List<Project> projects) {
-        if (projects == null)
-            return Collections.emptyList();
+        if (projects == null || projects.isEmpty())
+            return new ArrayList<>();
         return projects.stream().map(MapperUtils::toProjectResponse).collect(Collectors.toList());
     }
 
@@ -69,8 +69,8 @@ public class MapperUtils {
     }
 
     public static List<UserResponse> toUserListResponse(List<User> users) {
-        if (users == null)
-            return Collections.emptyList();
+        if (users == null || users.isEmpty())
+            return new ArrayList<>();
         return users.stream().map(MapperUtils::toUserResponse).collect(Collectors.toList());
     }
 
@@ -103,8 +103,8 @@ public class MapperUtils {
     }
 
     public static List<DeploymentHistoryResponse> toDeploymentHistoryListResponse(List<DeploymentHistory> deployments) {
-        if (deployments == null)
-            return Collections.emptyList();
+        if (deployments == null || deployments.isEmpty())
+            return new ArrayList<>();
         return deployments.stream().map(MapperUtils::toDeploymentHistoryResponse).collect(Collectors.toList());
     }
 }

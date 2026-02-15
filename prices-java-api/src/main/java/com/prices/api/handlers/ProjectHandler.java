@@ -40,7 +40,7 @@ public class ProjectHandler {
     public HttpResponse<?> getAll() {
         try {
             List<Project> projects = projectService.getAll();
-            return HttpResponse.ok(ApiResponse.success("Projects retrieved successfully", new ProjectListResponse(MapperUtils.toProjectListResponse(projects))));
+            return HttpResponse.ok(ApiResponse.success("Projects retrieved successfully", MapperUtils.toProjectListResponse(projects)));
         } catch (Exception e) {
             return HttpResponse.serverError(ErrorResponse.error("Failed to get projects"));
         }

@@ -2,15 +2,25 @@ micronaut:
   application:
     name: prices-java-api
 
+  server:
+    max-request-size: 100MB
+    multipart:
+      max-file-size: 100MB
+
   security:
     authentication: bearer
+    intercept-url-map:
+      - pattern: /api/auth/**
+        http-method: POST
+        access:
+          - isAnonymous()
     token:
       jwt:
         enabled: true
         signatures:
           secret:
             generator:
-              secret: "${JWT_SECRET:your-secret-key-here-must-be-at-least-256-bits-long-for-hs256}"
+              secret: "${JWT_SECRET:prices-deployment-api-jwt-secret-key-minimum-256-bits-required-for-hs256-algorithm}"
 
 netty:
   default:

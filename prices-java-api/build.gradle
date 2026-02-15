@@ -39,6 +39,9 @@ dependencies {
     // Apache Commons Compress for Zip
     implementation("org.apache.commons:commons-compress:1.26.0")
 
+    // Hypersistence Utils for JSONB support
+    implementation("io.hypersistence:hypersistence-utils-hibernate-63:3.7.3")
+
     // OpenAPI
     annotationProcessor("io.micronaut.openapi:micronaut-openapi")
     implementation("io.swagger.core.v3:swagger-annotations")

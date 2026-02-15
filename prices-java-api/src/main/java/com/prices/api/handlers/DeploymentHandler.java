@@ -72,8 +72,7 @@ public class DeploymentHandler {
     public HttpResponse<?> getHistory(Long projectId) {
         try {
             List<DeploymentHistory> history = deploymentService.getHistory(projectId);
-            return HttpResponse.ok(ApiResponse.success("Deployment history retrieved",
-                    new DeploymentListResponse(MapperUtils.toDeploymentHistoryListResponse(history))));
+            return HttpResponse.ok(ApiResponse.success("Deployment history retrieved", MapperUtils.toDeploymentHistoryListResponse(history)));
         } catch (Exception e) {
             return HttpResponse.serverError(ErrorResponse.error("Failed to get deployment history"));
         }

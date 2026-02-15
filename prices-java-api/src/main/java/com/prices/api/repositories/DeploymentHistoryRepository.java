@@ -16,6 +16,7 @@ public interface DeploymentHistoryRepository extends CrudRepository<DeploymentHi
     @Join(value = "user", type = Join.Type.LEFT_FETCH)
     Optional<DeploymentHistory> findById(Long id);
 
+    @Join(value = "project", type = Join.Type.LEFT_FETCH)
     @Join(value = "user", type = Join.Type.LEFT_FETCH)
     List<DeploymentHistory> findByProjectIdOrderByCreatedAtDesc(Long projectId);
 

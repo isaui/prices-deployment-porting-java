@@ -186,11 +186,10 @@ public class Client {
                 .GET()
                 .build();
 
-        // The Go client returns raw string logs inside a JSON wrapper { "logs": "..." }
-        // Java response should map to Map<String, String> or a specific DTO
-        Map<String, String> data = sendRequest(request, new TypeReference<ApiResponse<Map<String, String>>>() {
+        // API returns ApiResponse<LogsResponse> where LogsResponse has { logs, lines }
+        Map<String, Object> data = sendRequest(request, new TypeReference<ApiResponse<Map<String, Object>>>() {
         });
-        return data.get("logs");
+        return (String) data.get("logs");
     }
 
     public void streamDeploymentLogs(String deploymentId, java.util.function.Consumer<String> logConsumer)
@@ -269,7 +268,7 @@ public class Client {
         Project project = getProject(projectSlug);
 
         Map<String, Object> payload = new HashMap<>();
-        payload.put("env_vars", envVars);
+        payload.put("envVars", envVars);
         String body = objectMapper.writeValueAsString(payload);
 
         HttpRequest request = HttpRequest.newBuilder()
@@ -288,7 +287,7 @@ public class Client {
         Project project = getProject(projectSlug);
 
         Map<String, Object> payload = new HashMap<>();
-        payload.put("env_vars", envVars);
+        payload.put("envVars", envVars);
         String body = objectMapper.writeValueAsString(payload);
 
         HttpRequest request = HttpRequest.newBuilder()

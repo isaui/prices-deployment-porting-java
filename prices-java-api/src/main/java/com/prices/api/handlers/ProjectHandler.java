@@ -145,7 +145,7 @@ public class ProjectHandler {
     public HttpResponse<?> getLogs(Long id, int lines) {
         try {
             String logs = projectService.getLogs(id, lines);
-            return HttpResponse.ok(new LogsResponse(logs, lines));
+            return HttpResponse.ok(ApiResponse.success("Logs retrieved", new LogsResponse(logs, lines)));
         } catch (Exception e) {
             return HttpResponse.serverError(ErrorResponse.error("Failed to get logs: " + e.getMessage()));
         }

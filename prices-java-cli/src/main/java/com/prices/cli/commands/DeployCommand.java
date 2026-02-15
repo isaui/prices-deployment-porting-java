@@ -3,7 +3,6 @@ package com.prices.cli.commands;
 import com.prices.cli.api.Client;
 import com.prices.cli.api.models.CreateProjectRequest;
 import com.prices.cli.api.models.Deployment;
-import com.prices.cli.api.models.DeploymentStatus;
 import com.prices.cli.api.models.Project;
 import com.prices.cli.config.ConfigManager;
 import com.prices.cli.util.UrlUtil;
@@ -111,11 +110,6 @@ public class DeployCommand implements Callable<Integer> {
             }
             
             // 8. Final Status
-            DeploymentStatus status = client.getDeploymentStatus(deploymentId).getProject() != null ?
-                    new DeploymentStatus("success", "N/A", null, "") : null;
-            
-            // Re-fetch status to get full details or if above was just a guess
-            // Actually client.getDeploymentStatus returns Deployment object, let's check it
             Deployment dep = client.getDeploymentStatus(deploymentId);
             
             if ("success".equalsIgnoreCase(dep.getStatus())) {

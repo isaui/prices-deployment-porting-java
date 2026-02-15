@@ -7,7 +7,6 @@ import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 import picocli.CommandLine.ParentCommand;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Callable;
 

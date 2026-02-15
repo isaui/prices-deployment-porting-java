@@ -12,6 +12,7 @@ import java.net.http.HttpResponse;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class Client {
@@ -98,7 +99,7 @@ public class Client {
                 .build();
 
         return sendRequest(request, new TypeReference<ApiResponse<List<Deployment>>>() {
-        }).getData();
+        });
     }
 
     public Deployment getDeploymentStatus(String deploymentId) throws IOException, InterruptedException {
@@ -109,7 +110,7 @@ public class Client {
                 .build();
 
         return sendRequest(request, new TypeReference<ApiResponse<Deployment>>() {
-        }).getData();
+        });
     }
 
     public Project createProject(CreateProjectRequest req) throws IOException, InterruptedException {
@@ -122,7 +123,7 @@ public class Client {
                 .build();
 
         return sendRequest(request, new TypeReference<ApiResponse<Project>>() {
-        }).getData();
+        });
     }
 
     public List<Project> listProjects() throws IOException, InterruptedException {
@@ -133,7 +134,7 @@ public class Client {
                 .build();
 
         return sendRequest(request, new TypeReference<ApiResponse<List<Project>>>() {
-        }).getData();
+        });
     }
 
     public Project getProject(String slug) throws IOException, InterruptedException {
@@ -144,7 +145,7 @@ public class Client {
                 .build();
 
         return sendRequest(request, new TypeReference<ApiResponse<Project>>() {
-        }).getData();
+        });
     }
 
     public Project updateProject(String slug, UpdateProjectRequest req) throws IOException, InterruptedException {
@@ -162,7 +163,7 @@ public class Client {
                 .build();
 
         return sendRequest(request, new TypeReference<ApiResponse<Project>>() {
-        }).getData();
+        });
     }
 
     public void deleteProject(String slug) throws IOException, InterruptedException {
@@ -190,7 +191,7 @@ public class Client {
         // The Go client returns raw string logs inside a JSON wrapper { "logs": "..." }
         // Java response should map to Map<String, String> or a specific DTO
         Map<String, String> data = sendRequest(request, new TypeReference<ApiResponse<Map<String, String>>>() {
-        }).getData();
+        });
         return data.get("logs");
     }
 
@@ -235,7 +236,7 @@ public class Client {
                 .build();
 
         return sendRequest(request, new TypeReference<ApiResponse<ProjectEnvVarsResponse>>() {
-        }).getData().getEnvVars();
+        }).getEnvVars();
     }
 
     public void updateEnvVars(String projectSlug, Map<String, String> envVars)
@@ -284,7 +285,7 @@ public class Client {
                 .build();
 
         return sendRequest(request, new TypeReference<ApiResponse<DefaultEnvVarsResponse>>() {
-        }).getData();
+        });
     }
 
     public void setToken(String token) {

@@ -45,6 +45,10 @@ public class PricesCommand implements Runnable {
     @Option(names = {"-v", "--verbose"}, description = "Enable verbose output", scope = ScopeType.INHERIT)
     private boolean verbose;
 
+    public boolean isVerbose() {
+        return verbose;
+    }
+
     @Override
     public void run() {
         if (apiUrl != null && !apiUrl.isEmpty()) {

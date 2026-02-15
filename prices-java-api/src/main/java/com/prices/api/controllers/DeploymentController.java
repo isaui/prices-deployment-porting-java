@@ -1,6 +1,7 @@
 package com.prices.api.controllers;
 
 import com.prices.api.handlers.DeploymentHandler;
+import io.micronaut.core.annotation.Nullable;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.MediaType;
 import io.micronaut.http.annotation.*;
@@ -34,8 +35,8 @@ public class DeploymentController {
             Principal principal,
             @PathVariable Long id,
             @Part("artifact") CompletedFileUpload artifact,
-            @Part(value = "version", defaultValue = "1.0.0") String version,
-            @Part(value = "env_vars") @Nullable String envVars) {
+            @Part("version") @Nullable String version,
+            @Part("env_vars") @Nullable String envVars) {
         Long userId = Long.parseLong(principal.getName());
         return handler.deploy(id, userId, artifact, version, envVars);
     }

@@ -2,6 +2,7 @@ package com.prices.api.config;
 
 import io.micronaut.context.event.ApplicationEventListener;
 import io.micronaut.context.event.StartupEvent;
+import io.micronaut.transaction.annotation.Transactional;
 import jakarta.inject.Singleton;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,6 +21,7 @@ public class DatabaseStartup implements ApplicationEventListener<StartupEvent> {
     }
 
     @Override
+    @Transactional
     public void onApplicationEvent(StartupEvent event) {
         try (Connection connection = dataSource.getConnection()) {
             if (connection.isValid(5)) {

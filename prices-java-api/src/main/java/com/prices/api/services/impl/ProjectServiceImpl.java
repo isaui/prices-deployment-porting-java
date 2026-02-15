@@ -8,6 +8,8 @@ import com.prices.api.models.Project;
 import com.prices.api.repositories.DeploymentHistoryRepository;
 import com.prices.api.repositories.ProjectRepository;
 import com.prices.api.services.ProjectService;
+import com.prices.api.services.deployment.DeploymentContext;
+import com.prices.api.services.deployment.stages.CleanupStage;
 import com.prices.api.utils.EnvUtils;
 import com.prices.api.utils.NamingUtils;
 import com.prices.api.utils.SlugUtils;
@@ -176,7 +178,7 @@ public class ProjectServiceImpl implements ProjectService {
             ctx.setComposePath(deployDir.resolve("docker-compose.yml"));
 
             // Re-use logic from CleanupStage
-            new CleanupStage().execute(ctx);
+            new CleanupStage(detectDockerComposeCmd()).execute(ctx);
 
         } catch (Exception e) {
             log.warn("Cleanup pipeline failed for project: {}", project.getSlug(), e);

@@ -1,22 +1,18 @@
 # Build stage
-FROM eclipse-temurin:21-jdk-alpine AS builder
+FROM gradle:8.6-jdk21-alpine AS builder
 
-WORKDIR /app
+WORKDIR /home/gradle/src
 
-# Copy gradle files
-COPY gradlew .
-COPY gradle gradle
+# Copy Gradle build definition first to maximize layer caching
 COPY build.gradle .
 COPY settings.gradle .
-
-# Download dependencies (if you want to cache them, but gradlew build will do it anyway)
-# RUN ./gradlew dependencies
+COPY gradle.properties .
 
 # Copy source code
-COPY src src
+COPY src ./src
 
-# Build application
-RUN ./gradlew build -x test
+# Build application (skip tests for faster image builds)
+RUN gradle --no-daemon build -x test
 
 # Runtime stage
 FROM eclipse-temurin:21-jre-alpine
@@ -27,7 +23,7 @@ WORKDIR /app
 RUN apk --no-cache add ca-certificates docker-cli docker-compose
 
 # Copy JAR from builder (shadow jar is usually named *-all.jar or similar depending on shadow plugin config)
-COPY --from=builder /app/build/libs/prices-java-api-0.1-all.jar application.jar
+COPY --from=builder /home/gradle/src/build/libs/*-all.jar application.jar
 
 # Create directories for deployments and nginx config
 RUN mkdir -p /var/prices/deployments /var/prices/nginx/conf.d

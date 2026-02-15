@@ -34,6 +34,9 @@ public class ProjectsCommand implements Callable<Integer> {
             
             if (projects.isEmpty()) {
                 System.out.println("No projects found.");
+                System.out.println("\nCreate your first project with:");
+                System.out.println("  prices create       - Create a new project");
+                System.out.println("  prices deploy .     - Deploy current directory");
                 return 0;
             }
 

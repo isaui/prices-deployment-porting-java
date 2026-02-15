@@ -10,9 +10,9 @@ import java.util.Map;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ProjectEnvVarsResponse {
-    @JsonProperty("project_id")
+    @JsonProperty("projectId")
     private Long projectId;
     
-    @JsonProperty("env_vars")
+    @JsonProperty("envVars")
     private Map<String, String> envVars;
 }

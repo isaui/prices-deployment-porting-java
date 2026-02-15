@@ -14,7 +14,7 @@ public class Deployment {
     private String duration;
     private String error;
     
-    @JsonProperty("created_at")
+    @JsonProperty("createdAt")
     private String createdAt;
     
     private Project project;

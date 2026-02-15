@@ -13,35 +13,35 @@ public class UpdateProjectRequest {
     private String description;
 
     // Frontend
-    @JsonProperty("custom_frontend_url")
+    @JsonProperty("customFrontendUrl")
     private String customFrontendURL;
     
-    @JsonProperty("is_default_frontend_active")
+    @JsonProperty("defaultFrontendActive")
     private Boolean isDefaultFrontendActive;
     
-    @JsonProperty("is_custom_frontend_active")
+    @JsonProperty("customFrontendActive")
     private Boolean isCustomFrontendActive;
 
     // Backend
-    @JsonProperty("custom_backend_url")
+    @JsonProperty("customBackendUrl")
     private String customBackendURL;
     
-    @JsonProperty("is_default_backend_active")
+    @JsonProperty("defaultBackendActive")
     private Boolean isDefaultBackendActive;
     
-    @JsonProperty("is_custom_backend_active")
+    @JsonProperty("customBackendActive")
     private Boolean isCustomBackendActive;
 
     // Monitoring
-    @JsonProperty("custom_monitoring_url")
+    @JsonProperty("customMonitoringUrl")
     private String customMonitoringURL;
     
-    @JsonProperty("is_default_monitoring_active")
+    @JsonProperty("defaultMonitoringActive")
     private Boolean isDefaultMonitoringActive;
     
-    @JsonProperty("is_custom_monitoring_active")
+    @JsonProperty("customMonitoringActive")
     private Boolean isCustomMonitoringActive;
     
-    @JsonProperty("need_monitoring_exposed")
+    @JsonProperty("needMonitoringExposed")
     private Boolean needMonitoringExposed;
 }

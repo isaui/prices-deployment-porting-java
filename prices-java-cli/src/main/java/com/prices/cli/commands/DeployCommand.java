@@ -95,21 +95,32 @@ public class DeployCommand implements Callable<Integer> {
         // 5. Create Archive
         System.out.println("Preparing files...");
         Path archivePath = ZipUtil.createProjectArchive(absPath);
+        long fileSizeBytes = Files.size(archivePath);
+        String fileSize = formatFileSize(fileSizeBytes);
+        System.out.printf("Archive created: %s%n", fileSize);
         
         try {
-            // 6. Deploy
-            System.out.println("Uploading...");
-            String deploymentId = client.deploy(targetSlug, archivePath, version);
+            // 6. Deploy with progress
+            System.out.print("Uploading: 0.00 MB / " + fileSize + " (0%)");
+            String deploymentId = client.deploy(targetSlug, archivePath, version, (uploaded, total) -> {
+                double uploadedMB = uploaded / (1024.0 * 1024.0);
+                double totalMB = total / (1024.0 * 1024.0);
+                int percent = (int) ((uploaded * 100) / total);
+                System.out.printf("\rUploading: %.2f MB / %.2f MB (%d%%)", uploadedMB, totalMB, percent);
+            });
+            System.out.println(); // New line after progress
             
-            // 7. Stream Logs
+            // 7. Stream deployment logs (blocks until deployment finishes)
             System.out.println("Deploying...");
             try {
-                client.streamProjectLogs(targetSlug, System.out::println);
+                client.streamDeploymentLogs(deploymentId, System.out::println);
             } catch (Exception e) {
-                System.out.println("Warning: could not stream logs: " + e.getMessage());
+                if (parent.isVerbose()) {
+                    System.out.println("Warning: could not stream logs: " + e.getMessage());
+                }
             }
             
-            // 8. Final Status
+            // 8. Get final status (stream already waited for completion)
             Deployment dep = client.getDeploymentStatus(deploymentId);
             
             if ("success".equalsIgnoreCase(dep.getStatus())) {
@@ -130,7 +141,7 @@ public class DeployCommand implements Callable<Integer> {
                 System.out.println("  Logs: prices logs " + targetSlug);
                 return 0;
             } else {
-                System.out.println("\n✗ Deployment failed: " + dep.getError());
+                System.out.println("\n✗ Deployment failed: " + (dep.getError() != null ? dep.getError() : "Unknown error"));
                 return 1;
             }
             
@@ -151,7 +162,8 @@ public class DeployCommand implements Callable<Integer> {
     }
 
     private String createNewProject(Path path) throws Exception {
-        String defaultName = path.getFileName().toString();
+        // Normalize path to get actual directory name (not "." if user passed ".")
+        String defaultName = path.normalize().toAbsolutePath().getFileName().toString();
         
         System.out.printf("Project name [%s]: ", defaultName);
         String name = System.console().readLine();
@@ -216,6 +228,9 @@ public class DeployCommand implements Callable<Integer> {
 
     private void handleEnvVars(String slug) throws Exception {
         Map<String, String> existing = client.getEnvVars(slug);
+        if (existing == null) {
+            existing = new HashMap<>();
+        }
         
         if (!existing.isEmpty()) {
             System.out.println("\nCurrent environment variables:");
@@ -258,5 +273,12 @@ public class DeployCommand implements Callable<Integer> {
             client.updateEnvVars(slug, updates);
             System.out.println("✓ Custom environment variables added");
         }
+    }
+
+    private String formatFileSize(long bytes) {
+        if (bytes < 1024) return bytes + " B";
+        int exp = (int) (Math.log(bytes) / Math.log(1024));
+        String unit = "KMGTPE".charAt(exp - 1) + "B";
+        return String.format("%.2f %s", bytes / Math.pow(1024, exp), unit);
     }
 }

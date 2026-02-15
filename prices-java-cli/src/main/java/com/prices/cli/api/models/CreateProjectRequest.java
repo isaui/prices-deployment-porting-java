@@ -12,15 +12,15 @@ public class CreateProjectRequest {
     private String name;
     private String description;
     
-    @JsonProperty("custom_frontend_url")
+    @JsonProperty("customFrontendUrl")
     private String customFrontendURL;
     
-    @JsonProperty("custom_backend_url")
+    @JsonProperty("customBackendUrl")
     private String customBackendURL;
     
-    @JsonProperty("custom_monitoring_url")
+    @JsonProperty("customMonitoringUrl")
     private String customMonitoringURL;
     
-    @JsonProperty("need_monitoring_exposed")
+    @JsonProperty("needMonitoringExposed")
     private boolean needMonitoringExposed;
 }

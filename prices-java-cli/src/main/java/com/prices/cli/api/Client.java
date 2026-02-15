@@ -1,7 +1,9 @@
 package com.prices.cli.api;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.prices.cli.api.models.*;
 
 import java.io.IOException;
@@ -28,9 +30,12 @@ public class Client {
                 .connectTimeout(Duration.ofSeconds(30))
                 .build();
         this.objectMapper = new ObjectMapper();
+        this.objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        this.objectMapper.setPropertyNamingStrategy(PropertyNamingStrategies.LOWER_CAMEL_CASE);
     }
 
-    public String deploy(String projectSlug, Path archivePath, String version)
+    public String deploy(String projectSlug, Path archivePath, String version, 
+                         java.util.function.BiConsumer<Long, Long> progressCallback)
             throws IOException, InterruptedException {
         Project project = getProject(projectSlug);
         String boundary = "---ContentBoundary" + System.currentTimeMillis();
@@ -41,24 +46,17 @@ public class Client {
                 .addFile("artifact", archivePath, "application/zip")
                 .build();
 
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(baseUrl + "/api/projects/" + project.getId() + "/deploy"))
-                .header("Content-Type", "multipart/form-data; boundary=" + boundary)
-                .header("Authorization", "Bearer " + token)
-                .POST(bodyPublisher)
-                .build();
+        // Wrap with progress tracking
+        if (progressCallback != null) {
+            bodyPublisher = new ProgressBodyPublisher(bodyPublisher, progressCallback);
+        }
 
-        // Use separate client or config for longer timeout? Go code uses 10 min.
-        // For now using default client (30s might be too short for upload).
-        // Let's create a temp client for upload.
         HttpClient uploadClient = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(30))
-                // .timeout(Duration.ofMinutes(10)) // Request timeout
                 .build();
 
-        // Java 11 HttpClient request timeout is set on the request or client.
-        // Let's rebuild request with timeout
-        request = HttpRequest.newBuilder(request.uri())
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(baseUrl + "/api/projects/" + project.getId() + "/deploy"))
                 .header("Content-Type", "multipart/form-data; boundary=" + boundary)
                 .header("Authorization", "Bearer " + token)
                 .POST(bodyPublisher)
@@ -195,23 +193,21 @@ public class Client {
         return data.get("logs");
     }
 
-    public void streamProjectLogs(String projectSlug, java.util.function.Consumer<String> logConsumer)
+    public void streamDeploymentLogs(String deploymentId, java.util.function.Consumer<String> logConsumer)
             throws IOException, InterruptedException {
-        Project project = getProject(projectSlug);
-
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(baseUrl + "/api/projects/" + project.getId() + "/logs/stream"))
+                .uri(URI.create(baseUrl + "/api/deployments/" + deploymentId + "/stream"))
                 .header("Authorization", "Bearer " + token)
                 .header("Accept", "text/event-stream")
                 .GET()
                 .build();
 
-        // Use client with no timeout for streaming
+        // Use client with no timeout for SSE streaming (builds can take 10+ minutes)
         HttpClient streamClient = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(30))
-                .build(); // Default request timeout is usually not infinite, but we can handle stream
+                .build();
 
-        // Streaming response body
+        // Blocking SSE stream - reads until deployment finishes
         streamClient.sendAsync(request, HttpResponse.BodyHandlers.ofLines())
                 .thenAccept(response -> {
                     if (response.statusCode() != 200) {
@@ -223,7 +219,36 @@ public class Client {
                             logConsumer.accept(line.substring(6));
                         }
                     });
-                }).join(); // Block for CLI purposes or handle async? Go CLI blocks.
+                }).join(); // Block until stream ends (deployment complete)
+    }
+
+    public void streamProjectLogs(String projectSlug, java.util.function.Consumer<String> logConsumer)
+            throws IOException, InterruptedException {
+        Project project = getProject(projectSlug);
+
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(baseUrl + "/api/projects/" + project.getId() + "/logs/stream"))
+                .header("Authorization", "Bearer " + token)
+                .header("Accept", "text/event-stream")
+                .GET()
+                .build();
+
+        HttpClient streamClient = HttpClient.newBuilder()
+                .connectTimeout(Duration.ofSeconds(30))
+                .build();
+
+        streamClient.sendAsync(request, HttpResponse.BodyHandlers.ofLines())
+                .thenAccept(response -> {
+                    if (response.statusCode() != 200) {
+                        logConsumer.accept("Error: " + response.statusCode());
+                        return;
+                    }
+                    response.body().forEach(line -> {
+                        if (line.startsWith("data: ")) {
+                            logConsumer.accept(line.substring(6));
+                        }
+                    });
+                }).join();
     }
 
     public Map<String, String> getEnvVars(String projectSlug) throws IOException, InterruptedException {

@@ -16,53 +16,53 @@ public class Project {
     private String status;
 
     // Frontend URLs
-    @JsonProperty("default_frontend_url")
+    @JsonProperty("defaultFrontendUrl")
     private String defaultFrontendURL;
     
-    @JsonProperty("custom_frontend_url")
+    @JsonProperty("customFrontendUrl")
     private String customFrontendURL;
     
-    @JsonProperty("is_default_frontend_active")
+    @JsonProperty("defaultFrontendActive")
     private boolean isDefaultFrontendActive;
     
-    @JsonProperty("is_custom_frontend_active")
+    @JsonProperty("customFrontendActive")
     private boolean isCustomFrontendActive;
 
     // Backend URLs
-    @JsonProperty("default_backend_url")
+    @JsonProperty("defaultBackendUrl")
     private String defaultBackendURL;
     
-    @JsonProperty("custom_backend_url")
+    @JsonProperty("customBackendUrl")
     private String customBackendURL;
     
-    @JsonProperty("is_default_backend_active")
+    @JsonProperty("defaultBackendActive")
     private boolean isDefaultBackendActive;
     
-    @JsonProperty("is_custom_backend_active")
+    @JsonProperty("customBackendActive")
     private boolean isCustomBackendActive;
 
     // Monitoring URLs
-    @JsonProperty("default_monitoring_url")
+    @JsonProperty("defaultMonitoringUrl")
     private String defaultMonitoringURL;
     
-    @JsonProperty("custom_monitoring_url")
+    @JsonProperty("customMonitoringUrl")
     private String customMonitoringURL;
     
-    @JsonProperty("is_default_monitoring_active")
+    @JsonProperty("defaultMonitoringActive")
     private boolean isDefaultMonitoringActive;
     
-    @JsonProperty("is_custom_monitoring_active")
+    @JsonProperty("customMonitoringActive")
     private boolean isCustomMonitoringActive;
     
-    @JsonProperty("need_monitoring_exposed")
+    @JsonProperty("needMonitoringExposed")
     private boolean needMonitoringExposed;
 
-    @JsonProperty("user_id")
+    @JsonProperty("userId")
     private Long userId;
     
-    @JsonProperty("created_at")
+    @JsonProperty("createdAt")
     private String createdAt;
     
-    @JsonProperty("updated_at")
+    @JsonProperty("updatedAt")
     private String updatedAt;
 }

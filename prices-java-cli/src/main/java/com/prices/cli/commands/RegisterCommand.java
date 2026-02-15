@@ -47,7 +47,7 @@ public class RegisterCommand implements Callable<Integer> {
         try {
             String token = client.register(username, email, password);
             configManager.saveToken(token);
-            System.out.println("Registration successful! You are now logged in.");
+            System.out.println("Registration successful! Please run 'prices login' to authenticate.");
             return 0;
         } catch (Exception e) {
             System.err.println("Registration failed: " + e.getMessage());

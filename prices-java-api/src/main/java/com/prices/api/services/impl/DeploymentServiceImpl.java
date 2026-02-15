@@ -122,7 +122,6 @@ public class DeploymentServiceImpl implements DeploymentService {
                 new PrepareDistStage(),
                 new PrepareComposeStage(),
                 new DockerRunStage(dockerConfig.getDockerComposeCmd()),
-                new CleanupStage(dockerConfig.getDockerComposeCmd()),
                 new NginxStage()));
 
         try {

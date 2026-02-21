@@ -16,18 +16,17 @@ AMANAH_SSH_PORT="${AMANAH_SSH_PORT:-22}"
 LOCAL_TUNNEL_PORT="${LOCAL_TUNNEL_PORT:-9999}"
 
 echo "=== Membuka SSH Tunnel via Kawung → Amanah ==="
-echo "Kawung yang konek ke Amanah ($AMANAH_IP:$AMANAH_SSH_PORT), bukan laptop."
+echo "Test: Kawung yang konek ke Amanah ($AMANAH_IP:$AMANAH_SSH_PORT)"
 echo
 
 # -L: forward localhost:LOCAL_TUNNEL_PORT → AMANAH_IP:AMANAH_SSH_PORT via Kawung
 # -N: tunnel doang
-ssh -o StrictHostKeyChecking=no \
-    -L ${LOCAL_TUNNEL_PORT}:${AMANAH_IP}:${AMANAH_SSH_PORT} \
-    root@localhost -p 2222 \
-    -N &
-
+echo "Using plink for automated SSH tunnel..."
+plink -batch -hostkey "ssh-ed25519 255 SHA256:3i8SqO0d9WxPwslCbA6m8begJCqGIJvTmBtX6K8jMXY" \
+      -pw kawung123 -ssh -N \
+      -L ${LOCAL_TUNNEL_PORT}:${AMANAH_IP}:${AMANAH_SSH_PORT} \
+      root@localhost -P 2222 &
 TUNNEL_PID=$!
-echo "Tunnel PID: $TUNNEL_PID"
 echo
 
 echo "=== Kawung siap! ==="

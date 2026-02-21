@@ -16,7 +16,7 @@
 #   --backend-url           Backend URL (default: backend-<slug>.<PRICES_DOMAIN>)
 #   --custom-frontend-url   Custom frontend URL
 #   --custom-backend-url    Custom backend URL
-#   --monitoring-url        Monitoring URL
+#   --monitoring-url        Monitoring URL (default: monitoring-<slug>.<PRICES_DOMAIN>)
 #   --custom-monitoring-url Custom monitoring URL
 #   --expose-monitoring     Expose monitoring endpoints
 #   --env-file              Path to .env file with additional env vars

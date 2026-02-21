@@ -134,9 +134,29 @@ COMPOSE_PATH="${EXTRACTED_PATH}/docker-compose.yml"
 NETWORK_NAME=$(network_name "$SLUG")
 
 if [[ "$HAS_USER_COMPOSE" == true ]]; then
-    log_info "User docker-compose.yml found, customizing volumes/networks..."
-    # TODO: Implement user compose customization (yaml parsing)
-    # For now we assume generated compose
+    log_info "User docker-compose.yml found, using as-is..."
+    
+    # Check if prices-proxy-network is defined
+    if ! grep -q "prices-proxy-network" "$COMPOSE_PATH"; then
+        log_warn "Adding prices-proxy-network to user compose..."
+        
+        # Append network definition if networks section exists
+        if grep -q "^networks:" "$COMPOSE_PATH"; then
+            # Add to existing networks section
+            sed -i '/^networks:/a\  prices-proxy-network:\n    external: true' "$COMPOSE_PATH"
+        else
+            # Add networks section at the end
+            cat >> "$COMPOSE_PATH" << 'NETEOF'
+
+networks:
+  prices-proxy-network:
+    external: true
+NETEOF
+        fi
+        log_info "Added prices-proxy-network to compose"
+    fi
+    
+    log_info "Using user compose: ${COMPOSE_PATH}"
 else
     log_info "Generating docker-compose.yml..."
     

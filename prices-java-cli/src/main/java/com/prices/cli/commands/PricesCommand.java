@@ -34,6 +34,7 @@ import java.io.IOException;
         
         // Deployment
         DeployCommand.class,
+        DeploySshCommand.class,
         StatusCommand.class,
         HistoryCommand.class,
         LogsCommand.class,

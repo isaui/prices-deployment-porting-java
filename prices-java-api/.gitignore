@@ -1,6 +1,7 @@
 .gradle
 build/
 bin/
+.ssh/
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
 !**/src/test/**/build/

@@ -2,18 +2,26 @@ FROM ubuntu:22.04
 
 RUN apt-get update && apt-get install -y \
     openssh-server \
+    whois \
     && rm -rf /var/lib/apt/lists/*
 
 RUN mkdir /var/run/sshd
 
+# Generate SSH host keys
+RUN ssh-keygen -A
+
 # Password login untuk masuk ke Kawung dari laptop
 RUN echo 'root:kawung123' | chpasswd
 
+# SSH config untuk password login dan port forwarding
 RUN sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config && \
     sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config && \
+    sed -i 's/#PubkeyAuthentication yes/PubkeyAuthentication no/' /etc/ssh/sshd_config && \
     echo "AllowTcpForwarding yes" >> /etc/ssh/sshd_config && \
-    echo "GatewayPorts yes" >> /etc/ssh/sshd_config
+    echo "GatewayPorts yes" >> /etc/ssh/sshd_config && \
+    echo "LogLevel VERBOSE" >> /etc/ssh/sshd_config
 
 EXPOSE 22
 
-CMD ["/usr/sbin/sshd", "-D"]
+# Start SSH daemon dengan logging
+CMD ["sh", "-c", "echo '=== Starting SSH daemon ===' && echo 'Password: kawung123' && exec /usr/sbin/sshd -D -e"]

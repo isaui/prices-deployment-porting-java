@@ -1,0 +1,9 @@
+services:
+  kawung:
+    build:
+      context: .
+      dockerfile: Dockerfile.kawung-simulator
+    container_name: kawung
+    ports:
+      - "2222:22"   # laptop SSH ke sini untuk masuk ke Kawung
+    restart: unless-stopped

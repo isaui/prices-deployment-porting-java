@@ -14,6 +14,8 @@ import io.micronaut.http.HttpStatus;
 import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 
+import java.security.Principal;
+
 @Singleton
 @RequiredArgsConstructor
 public class AuthHandler {
@@ -44,6 +46,17 @@ public class AuthHandler {
             return HttpResponse.ok(ApiResponse.success("Login successful", new LoginResponse(token, null)));
         } catch (Exception e) {
             return HttpResponse.unauthorized().body(ErrorResponse.error(e.getMessage()));
+        }
+    }
+
+    public HttpResponse<?> getCurrentUser(Principal principal) {
+        try {
+            Long userId = Long.parseLong(principal.getName());
+            User user = authService.getUserById(userId);
+            UserResponse userResp = MapperUtils.toUserResponse(user);
+            return HttpResponse.ok(ApiResponse.success("Current user", userResp));
+        } catch (Exception e) {
+            return HttpResponse.unauthorized().body(ErrorResponse.error("Not authenticated"));
         }
     }
 }

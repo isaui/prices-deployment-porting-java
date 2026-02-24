@@ -6,10 +6,13 @@ import com.prices.api.handlers.AuthHandler;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.annotation.Body;
 import io.micronaut.http.annotation.Controller;
+import io.micronaut.http.annotation.Get;
 import io.micronaut.http.annotation.Post;
 import io.micronaut.scheduling.TaskExecutors;
 import io.micronaut.scheduling.annotation.ExecuteOn;
 import lombok.RequiredArgsConstructor;
+
+import java.security.Principal;
 
 @Controller("/api/auth")
 @RequiredArgsConstructor
@@ -26,5 +29,10 @@ public class AuthController {
     @Post("/login")
     public HttpResponse<?> login(@Body LoginRequest req) {
         return handler.login(req);
+    }
+
+    @Get("/me")
+    public HttpResponse<?> getCurrentUser(Principal principal) {
+        return handler.getCurrentUser(principal);
     }
 }

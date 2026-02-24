@@ -1,10 +1,12 @@
 package com.prices.cli.commands;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.prices.cli.api.Client;
 import com.prices.cli.api.models.Project;
 import com.prices.cli.config.ConfigManager;
 import com.prices.cli.util.UrlUtil;
 import picocli.CommandLine.Command;
+import picocli.CommandLine.Option;
 import picocli.CommandLine.ParentCommand;
 
 import java.util.List;
@@ -15,6 +17,11 @@ public class ProjectsCommand implements Callable<Integer> {
 
     @ParentCommand
     private PricesCommand parent;
+
+    @Option(names = {"--json", "-j"}, description = "Output in JSON format")
+    private boolean jsonOutput;
+
+    private static final ObjectMapper objectMapper = new ObjectMapper();
 
     @Override
     public Integer call() throws Exception {
@@ -31,6 +38,11 @@ public class ProjectsCommand implements Callable<Integer> {
 
         try {
             List<Project> projects = client.listProjects();
+            
+            if (jsonOutput) {
+                System.out.println(objectMapper.writeValueAsString(projects));
+                return 0;
+            }
             
             if (projects.isEmpty()) {
                 System.out.println("No projects found.");

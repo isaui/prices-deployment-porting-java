@@ -8,4 +8,5 @@ public interface AuthService {
     User register(RegisterRequest req);
     String login(LoginRequest req);
     User validateToken(String token);
+    User getUserById(Long id);
 }

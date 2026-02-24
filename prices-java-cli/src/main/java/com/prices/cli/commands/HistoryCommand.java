@@ -1,9 +1,11 @@
 package com.prices.cli.commands;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.prices.cli.api.Client;
 import com.prices.cli.api.models.Deployment;
 import com.prices.cli.config.ConfigManager;
 import picocli.CommandLine.Command;
+import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 import picocli.CommandLine.ParentCommand;
 
@@ -18,6 +20,11 @@ public class HistoryCommand implements Callable<Integer> {
 
     @Parameters(index = "0", description = "Project slug")
     private String slug;
+
+    @Option(names = {"--json", "-j"}, description = "Output in JSON format")
+    private boolean jsonOutput;
+
+    private static final ObjectMapper objectMapper = new ObjectMapper();
 
     @Override
     public Integer call() throws Exception {
@@ -34,6 +41,11 @@ public class HistoryCommand implements Callable<Integer> {
 
         try {
             List<Deployment> history = client.getDeploymentHistory(slug);
+            
+            if (jsonOutput) {
+                System.out.println(objectMapper.writeValueAsString(history));
+                return 0;
+            }
             
             if (history.isEmpty()) {
                 System.out.println("No deployments found for " + slug);

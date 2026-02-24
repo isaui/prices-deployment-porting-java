@@ -1,5 +1,6 @@
 package com.prices.cli.commands;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.prices.cli.api.Client;
 import com.prices.cli.config.ConfigManager;
 import picocli.CommandLine.Command;
@@ -25,6 +26,11 @@ public class EnvVarsCommand implements Callable<Integer> {
     @Option(names = {"--replace"}, description = "Replace all env vars (KEY=VALUE)")
     private Map<String, String> replaceVars;
 
+    @Option(names = {"--json", "-j"}, description = "Output in JSON format")
+    private boolean jsonOutput;
+
+    private static final ObjectMapper objectMapper = new ObjectMapper();
+
     @Override
     public Integer call() throws Exception {
         ConfigManager configManager = new ConfigManager();
@@ -49,6 +55,12 @@ public class EnvVarsCommand implements Callable<Integer> {
             
             // Always show current vars after operation or if no op specified
             Map<String, String> current = client.getEnvVars(slug);
+            
+            if (jsonOutput) {
+                System.out.println(objectMapper.writeValueAsString(current));
+                return 0;
+            }
+            
             if (current.isEmpty()) {
                 System.out.println("No environment variables set.");
             } else {

@@ -81,6 +81,11 @@ public class AuthServiceImpl implements AuthService {
         return userRepo.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
     }
 
+    @Override
+    public User getUserById(Long id) {
+        return userRepo.findById(id).orElseThrow(() -> new RuntimeException("User not found"));
+    }
+
     private String hashPassword(String password) {
         return BCrypt.hashpw(password, BCrypt.gensalt());
     }

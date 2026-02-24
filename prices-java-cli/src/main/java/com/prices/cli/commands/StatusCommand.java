@@ -1,10 +1,12 @@
 package com.prices.cli.commands;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.prices.cli.api.Client;
 import com.prices.cli.api.models.Project;
 import com.prices.cli.config.ConfigManager;
 import com.prices.cli.util.UrlUtil;
 import picocli.CommandLine.Command;
+import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 import picocli.CommandLine.ParentCommand;
 
@@ -18,6 +20,11 @@ public class StatusCommand implements Callable<Integer> {
 
     @Parameters(index = "0", description = "Project Slug")
     private String projectSlug;
+
+    @Option(names = {"--json", "-j"}, description = "Output in JSON format")
+    private boolean jsonOutput;
+
+    private static final ObjectMapper objectMapper = new ObjectMapper();
 
     @Override
     public Integer call() throws Exception {
@@ -34,6 +41,11 @@ public class StatusCommand implements Callable<Integer> {
 
         try {
             Project project = client.getProject(projectSlug);
+            
+            if (jsonOutput) {
+                System.out.println(objectMapper.writeValueAsString(project));
+                return 0;
+            }
 
             System.out.println("Project: " + project.getName());
             System.out.println("Slug: " + project.getSlug());

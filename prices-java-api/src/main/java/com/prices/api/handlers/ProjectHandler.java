@@ -46,6 +46,15 @@ public class ProjectHandler {
         }
     }
 
+    public HttpResponse<?> getByUserId(Long userId) {
+        try {
+            List<Project> projects = projectService.getByUserId(userId);
+            return HttpResponse.ok(ApiResponse.success("User projects retrieved successfully", MapperUtils.toProjectListResponse(projects)));
+        } catch (Exception e) {
+            return HttpResponse.serverError(ErrorResponse.error("Failed to get user projects"));
+        }
+    }
+
     public HttpResponse<?> getById(Long id) {
         try {
             Project project = projectService.getById(id);

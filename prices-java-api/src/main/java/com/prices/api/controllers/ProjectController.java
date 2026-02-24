@@ -35,6 +35,12 @@ public class ProjectController {
         return handler.getAll();
     }
 
+    @Get("/me")
+    public HttpResponse<?> getProjectByMe(Principal principal) {
+        Long userId = Long.parseLong(principal.getName());
+        return handler.getByUserId(userId);
+    }
+
     @Get("/{id}")
     public HttpResponse<?> getById(@PathVariable Long id) {
         return handler.getById(id);

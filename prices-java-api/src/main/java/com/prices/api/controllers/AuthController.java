@@ -11,9 +11,11 @@ import io.micronaut.http.annotation.Post;
 import io.micronaut.scheduling.TaskExecutors;
 import io.micronaut.scheduling.annotation.ExecuteOn;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 import java.security.Principal;
 
+@Slf4j
 @Controller("/api/auth")
 @RequiredArgsConstructor
 @ExecuteOn(TaskExecutors.BLOCKING)
@@ -33,6 +35,7 @@ public class AuthController {
 
     @Get("/me")
     public HttpResponse<?> getCurrentUser(Principal principal) {
+        log.info("Get current user request for principal: {}", principal != null ? principal.getName() : "null");
         return handler.getCurrentUser(principal);
     }
 }

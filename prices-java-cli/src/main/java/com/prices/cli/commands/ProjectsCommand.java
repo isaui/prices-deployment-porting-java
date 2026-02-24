@@ -2,6 +2,7 @@ package com.prices.cli.commands;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.prices.cli.api.Client;
+import com.prices.cli.api.models.ApiResponse;
 import com.prices.cli.api.models.Project;
 import com.prices.cli.config.ConfigManager;
 import com.prices.cli.util.UrlUtil;
@@ -40,7 +41,11 @@ public class ProjectsCommand implements Callable<Integer> {
             List<Project> projects = client.listProjects();
             
             if (jsonOutput) {
-                System.out.println(objectMapper.writeValueAsString(projects));
+                ApiResponse<List<Project>> response = new ApiResponse<>();
+                response.setSuccess(true);
+                response.setMessage("Projects retrieved successfully");
+                response.setData(projects);
+                System.out.println(objectMapper.writeValueAsString(response));
                 return 0;
             }
             

@@ -126,7 +126,7 @@ public class Client {
 
     public List<Project> listProjects() throws IOException, InterruptedException {
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(baseUrl + "/api/projects"))
+                .uri(URI.create(baseUrl + "/api/projects/me"))
                 .header("Authorization", "Bearer " + token)
                 .GET()
                 .build();
@@ -314,6 +314,17 @@ public class Client {
 
     public void setToken(String token) {
         this.token = token;
+    }
+
+    public User getCurrentUser() throws IOException, InterruptedException {
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(baseUrl + "/api/auth/me"))
+                .header("Authorization", "Bearer " + token)
+                .GET()
+                .build();
+
+        return sendRequest(request, new TypeReference<ApiResponse<User>>() {
+        });
     }
 
     private <T> T sendRequest(HttpRequest request, TypeReference<ApiResponse<T>> typeRef)

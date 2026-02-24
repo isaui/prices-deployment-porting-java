@@ -22,8 +22,9 @@ import java.io.IOException;
     subcommands = {
         // Auth
         LoginCommand.class,
-        RegisterCommand.class,
+        MeCommand.class,
         LogoutCommand.class,
+        RegisterCommand.class,
         
         // Projects
         ProjectsCommand.class,

@@ -2,6 +2,7 @@ package com.prices.cli.commands;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.prices.cli.api.Client;
+import com.prices.cli.api.models.ApiResponse;
 import com.prices.cli.api.models.Project;
 import com.prices.cli.config.ConfigManager;
 import com.prices.cli.util.UrlUtil;
@@ -43,7 +44,11 @@ public class StatusCommand implements Callable<Integer> {
             Project project = client.getProject(projectSlug);
             
             if (jsonOutput) {
-                System.out.println(objectMapper.writeValueAsString(project));
+                ApiResponse<Project> response = new ApiResponse<>();
+                response.setSuccess(true);
+                response.setMessage("Project status retrieved successfully");
+                response.setData(project);
+                System.out.println(objectMapper.writeValueAsString(response));
                 return 0;
             }
 

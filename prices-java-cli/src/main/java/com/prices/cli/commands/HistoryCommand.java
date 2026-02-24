@@ -2,6 +2,7 @@ package com.prices.cli.commands;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.prices.cli.api.Client;
+import com.prices.cli.api.models.ApiResponse;
 import com.prices.cli.api.models.Deployment;
 import com.prices.cli.config.ConfigManager;
 import picocli.CommandLine.Command;
@@ -43,7 +44,11 @@ public class HistoryCommand implements Callable<Integer> {
             List<Deployment> history = client.getDeploymentHistory(slug);
             
             if (jsonOutput) {
-                System.out.println(objectMapper.writeValueAsString(history));
+                ApiResponse<List<Deployment>> response = new ApiResponse<>();
+                response.setSuccess(true);
+                response.setMessage("Deployment history retrieved successfully");
+                response.setData(history);
+                System.out.println(objectMapper.writeValueAsString(response));
                 return 0;
             }
             

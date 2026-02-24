@@ -2,6 +2,7 @@ package com.prices.cli.commands;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.prices.cli.api.Client;
+import com.prices.cli.api.models.ApiResponse;
 import com.prices.cli.config.ConfigManager;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
@@ -57,7 +58,11 @@ public class EnvVarsCommand implements Callable<Integer> {
             Map<String, String> current = client.getEnvVars(slug);
             
             if (jsonOutput) {
-                System.out.println(objectMapper.writeValueAsString(current));
+                ApiResponse<Map<String, String>> response = new ApiResponse<>();
+                response.setSuccess(true);
+                response.setMessage("Environment variables retrieved successfully");
+                response.setData(current);
+                System.out.println(objectMapper.writeValueAsString(response));
                 return 0;
             }
             

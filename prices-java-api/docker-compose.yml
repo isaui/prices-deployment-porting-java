@@ -61,6 +61,7 @@ services:
       - ./nginx/conf.d:/etc/nginx/conf.d/static:ro
       - ./docker-vol/nginx/conf.d:/etc/nginx/conf.d/dynamic
       - ./docker-vol/nginx/certs:/etc/nginx/certs
+      - ./.cert:/etc/nginx/ssl:ro
     networks:
       - prices-proxy-network
     restart: unless-stopped

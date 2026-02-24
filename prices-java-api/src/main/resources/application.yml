@@ -10,10 +10,18 @@ micronaut:
   security:
     authentication: bearer
     intercept-url-map:
-      - pattern: /api/auth/**
+      - pattern: /api/auth/login
         http-method: POST
         access:
           - isAnonymous()
+      - pattern: /api/auth/register
+        http-method: POST
+        access:
+          - isAnonymous()
+      - pattern: /api/auth/me
+        http-method: GET
+        access:
+          - isAuthenticated()
     token:
       jwt:
         enabled: true

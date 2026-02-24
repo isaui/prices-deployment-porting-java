@@ -83,10 +83,24 @@ public class NginxStage implements PipelineStage {
 
         // Frontend
         if (hasFrontend(ctx)) {
-            sb.append("# Frontend server\n");
+            // HTTP to HTTPS redirect
+            sb.append("# Frontend HTTP to HTTPS redirect\n");
             sb.append("server {\n");
             sb.append("    listen 80;\n");
+            sb.append("    server_name ").append(getFrontendServerNames(ctx)).append(";\n");
+            sb.append("    return 301 https://$host$request_uri;\n");
+            sb.append("}\n\n");
+            
+            // HTTPS Frontend
+            sb.append("# Frontend server\n");
+            sb.append("server {\n");
+            sb.append("    listen 443 ssl http2;\n");
             sb.append("    server_name ").append(getFrontendServerNames(ctx)).append(";\n\n");
+            sb.append("    # Security headers\n");
+            sb.append("    add_header Strict-Transport-Security \"max-age=31536000; includeSubDomains\" always;\n");
+            sb.append("    add_header X-Frame-Options DENY always;\n");
+            sb.append("    add_header X-Content-Type-Options nosniff always;\n");
+            sb.append("    add_header Referrer-Policy \"strict-origin-when-cross-origin\" always;\n\n");
             sb.append("    resolver 127.0.0.11 valid=30s;\n");
             sb.append("    set $frontend_upstream http://").append(frontendContainer).append(":80;\n\n");
             sb.append("    location / {\n");
@@ -105,10 +119,24 @@ public class NginxStage implements PipelineStage {
 
         // Backend
         if (hasBackend(ctx)) {
-            sb.append("# Backend server\n");
+            // HTTP to HTTPS redirect
+            sb.append("# Backend HTTP to HTTPS redirect\n");
             sb.append("server {\n");
             sb.append("    listen 80;\n");
+            sb.append("    server_name ").append(getBackendServerNames(ctx)).append(";\n");
+            sb.append("    return 301 https://$host$request_uri;\n");
+            sb.append("}\n\n");
+            
+            // HTTPS Backend
+            sb.append("# Backend server\n");
+            sb.append("server {\n");
+            sb.append("    listen 443 ssl http2;\n");
             sb.append("    server_name ").append(getBackendServerNames(ctx)).append(";\n\n");
+            sb.append("    # Security headers\n");
+            sb.append("    add_header Strict-Transport-Security \"max-age=31536000; includeSubDomains\" always;\n");
+            sb.append("    add_header X-Frame-Options DENY always;\n");
+            sb.append("    add_header X-Content-Type-Options nosniff always;\n");
+            sb.append("    add_header Referrer-Policy \"strict-origin-when-cross-origin\" always;\n\n");
             sb.append("    resolver 127.0.0.11 valid=30s;\n");
             sb.append("    set $backend_upstream http://").append(backendContainer).append(":7776;\n\n");
             sb.append("    location / {\n");
@@ -127,10 +155,24 @@ public class NginxStage implements PipelineStage {
 
         // Monitoring
         if (hasMonitoring(ctx)) {
-            sb.append("# Monitoring server\n");
+            // HTTP to HTTPS redirect
+            sb.append("# Monitoring HTTP to HTTPS redirect\n");
             sb.append("server {\n");
             sb.append("    listen 80;\n");
+            sb.append("    server_name ").append(getMonitoringServerNames(ctx)).append(";\n");
+            sb.append("    return 301 https://$host$request_uri;\n");
+            sb.append("}\n\n");
+            
+            // HTTPS Monitoring
+            sb.append("# Monitoring server\n");
+            sb.append("server {\n");
+            sb.append("    listen 443 ssl http2;\n");
             sb.append("    server_name ").append(getMonitoringServerNames(ctx)).append(";\n\n");
+            sb.append("    # Security headers\n");
+            sb.append("    add_header Strict-Transport-Security \"max-age=31536000; includeSubDomains\" always;\n");
+            sb.append("    add_header X-Frame-Options DENY always;\n");
+            sb.append("    add_header X-Content-Type-Options nosniff always;\n");
+            sb.append("    add_header Referrer-Policy \"strict-origin-when-cross-origin\" always;\n\n");
             sb.append("    resolver 127.0.0.11 valid=30s;\n");
             sb.append("    set $monitoring_upstream http://").append(backendContainer).append(":9464;\n\n");
             sb.append("    location / {\n");

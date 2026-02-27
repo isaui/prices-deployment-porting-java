@@ -48,10 +48,14 @@ public class EnvVarsCommand implements Callable<Integer> {
         try {
             if (replaceVars != null && !replaceVars.isEmpty()) {
                 client.replaceEnvVars(slug, replaceVars);
-                System.out.println("Environment variables replaced successfully.");
+                if (!jsonOutput) {
+                    System.out.println("Environment variables replaced successfully.");
+                }
             } else if (setVars != null && !setVars.isEmpty()) {
                 client.updateEnvVars(slug, setVars);
-                System.out.println("Environment variables updated successfully.");
+                if (!jsonOutput) {
+                    System.out.println("Environment variables updated successfully.");
+                }
             }
             
             // Always show current vars after operation or if no op specified

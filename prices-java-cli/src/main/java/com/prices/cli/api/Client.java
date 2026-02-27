@@ -327,9 +327,27 @@ public class Client {
         });
     }
 
+    private static final int MAX_RETRIES = 3;
+    private static final long RETRY_DELAY_MS = 1000;
+
     private <T> T sendRequest(HttpRequest request, TypeReference<ApiResponse<T>> typeRef)
             throws IOException, InterruptedException {
-        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        return sendRequestWithRetry(request, typeRef, MAX_RETRIES);
+    }
+
+    private <T> T sendRequestWithRetry(HttpRequest request, TypeReference<ApiResponse<T>> typeRef, int retriesLeft)
+            throws IOException, InterruptedException {
+        HttpResponse<String> response;
+        try {
+            response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        } catch (IOException e) {
+            // Retry on GOAWAY or connection reset (nginx reload)
+            if (retriesLeft > 0 && (e.getMessage().contains("GOAWAY") || e.getMessage().contains("Connection reset"))) {
+                Thread.sleep(RETRY_DELAY_MS);
+                return sendRequestWithRetry(request, typeRef, retriesLeft - 1);
+            }
+            throw e;
+        }
 
         if (response.statusCode() >= 400 && response.statusCode() < 500) {
             // Try to parse error response

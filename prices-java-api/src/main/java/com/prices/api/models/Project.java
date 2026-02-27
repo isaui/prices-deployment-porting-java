@@ -51,6 +51,13 @@ public class Project {
     private boolean isCustomMonitoringActive = false;
     private boolean needMonitoringExposed = false;
 
+    // Listening ports (for Traefik routing)
+    @Column(columnDefinition = "integer default 3000")
+    private Integer frontendListeningPort = 3000;
+
+    @Column(columnDefinition = "integer default 7776")
+    private Integer backendListeningPort = 7776;
+
     @Column(name = "user_id", nullable = false)
     private Long userId;
 

@@ -40,6 +40,10 @@ public class DeploymentContext {
     private boolean isCustomMonitoringActive;
     private boolean needMonitoringExposed;
 
+    // Listening ports (for Traefik routing)
+    private int frontendListeningPort = 3000;
+    private int backendListeningPort = 7776;
+
     // Env vars
     private Map<String, String> existingEnvVars = new HashMap<>();
     private Map<String, String> inputEnvVars = new HashMap<>();
@@ -94,6 +98,9 @@ public class DeploymentContext {
         ctx.setDefaultMonitoringActive(project.isDefaultMonitoringActive());
         ctx.setCustomMonitoringActive(project.isCustomMonitoringActive());
         ctx.setNeedMonitoringExposed(project.isNeedMonitoringExposed());
+
+        ctx.setFrontendListeningPort(project.getFrontendListeningPort() != null ? project.getFrontendListeningPort() : 3000);
+        ctx.setBackendListeningPort(project.getBackendListeningPort() != null ? project.getBackendListeningPort() : 7776);
 
         if (project.getEnvVars() != null) {
             ctx.setExistingEnvVars(new HashMap<>(project.getEnvVars()));

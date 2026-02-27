@@ -80,6 +80,14 @@ public class ProjectServiceImpl implements ProjectService {
         project.setCustomMonitoringActive(req.isNeedMonitoringExposed() && customMonitoringURL != null);
         project.setNeedMonitoringExposed(req.isNeedMonitoringExposed());
 
+        // Listening ports
+        if (req.getFrontendListeningPort() != null) {
+            project.setFrontendListeningPort(req.getFrontendListeningPort());
+        }
+        if (req.getBackendListeningPort() != null) {
+            project.setBackendListeningPort(req.getBackendListeningPort());
+        }
+
         return projectRepo.save(project);
     }
 
@@ -158,6 +166,14 @@ public class ProjectServiceImpl implements ProjectService {
         }
         if (req.getNeedMonitoringExposed() != null) {
             project.setNeedMonitoringExposed(req.getNeedMonitoringExposed());
+        }
+
+        // Listening ports
+        if (req.getFrontendListeningPort() != null) {
+            project.setFrontendListeningPort(req.getFrontendListeningPort());
+        }
+        if (req.getBackendListeningPort() != null) {
+            project.setBackendListeningPort(req.getBackendListeningPort());
         }
 
         return projectRepo.update(project);

@@ -57,6 +57,13 @@ public class Project {
     @JsonProperty("needMonitoringExposed")
     private boolean needMonitoringExposed;
 
+    // Listening ports
+    @JsonProperty("frontendListeningPort")
+    private Integer frontendListeningPort;
+
+    @JsonProperty("backendListeningPort")
+    private Integer backendListeningPort;
+
     @JsonProperty("userId")
     private Long userId;
     

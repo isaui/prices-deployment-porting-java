@@ -23,4 +23,10 @@ public class CreateProjectRequest {
     
     @JsonProperty("needMonitoringExposed")
     private boolean needMonitoringExposed;
+
+    @JsonProperty("frontendListeningPort")
+    private Integer frontendListeningPort;
+
+    @JsonProperty("backendListeningPort")
+    private Integer backendListeningPort;
 }

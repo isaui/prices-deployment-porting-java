@@ -14,4 +14,7 @@ public class CreateProjectRequest {
     private String customMonitoringUrl;
 
     private boolean needMonitoringExposed;
+
+    private Integer frontendListeningPort;
+    private Integer backendListeningPort;
 }

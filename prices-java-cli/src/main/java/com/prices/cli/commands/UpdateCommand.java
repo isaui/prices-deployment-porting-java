@@ -1,6 +1,8 @@
 package com.prices.cli.commands;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.prices.cli.api.Client;
+import com.prices.cli.api.models.ApiResponse;
 import com.prices.cli.api.models.Project;
 import com.prices.cli.api.models.UpdateProjectRequest;
 import com.prices.cli.config.ConfigManager;
@@ -38,6 +40,17 @@ public class UpdateCommand implements Callable<Integer> {
     @Option(names = {"--monitoring"}, description = "Expose monitoring endpoint")
     private Boolean exposeMonitoring;
 
+    @Option(names = {"--frontend-port"}, description = "Frontend listening port")
+    private Integer frontendPort;
+
+    @Option(names = {"--backend-port"}, description = "Backend listening port")
+    private Integer backendPort;
+
+    @Option(names = {"--json", "-j"}, description = "Output in JSON format")
+    private boolean jsonOutput;
+
+    private static final ObjectMapper objectMapper = new ObjectMapper();
+
     @Override
     public Integer call() throws Exception {
         ConfigManager configManager = new ConfigManager();
@@ -58,15 +71,33 @@ public class UpdateCommand implements Callable<Integer> {
         req.setCustomBackendURL(customBackendUrl);
         req.setCustomMonitoringURL(customMonitoringUrl);
         req.setNeedMonitoringExposed(exposeMonitoring);
+        req.setFrontendListeningPort(frontendPort);
+        req.setBackendListeningPort(backendPort);
 
         try {
             Project project = client.updateProject(slug, req);
-            System.out.println("Project updated successfully: " + project.getSlug());
+            
+            if (jsonOutput) {
+                ApiResponse<Project> response = new ApiResponse<>();
+                response.setSuccess(true);
+                response.setMessage("Project updated successfully");
+                response.setData(project);
+                System.out.println(objectMapper.writeValueAsString(response));
+            } else {
+                System.out.println("Project updated successfully: " + project.getSlug());
+            }
             return 0;
         } catch (Exception e) {
-            System.err.println("Failed to update project: " + e.getMessage());
-            if (parent.isVerbose()) {
-                e.printStackTrace();
+            if (jsonOutput) {
+                ApiResponse<Object> response = new ApiResponse<>();
+                response.setSuccess(false);
+                response.setMessage("Failed to update project: " + e.getMessage());
+                System.out.println(objectMapper.writeValueAsString(response));
+            } else {
+                System.err.println("Failed to update project: " + e.getMessage());
+                if (parent.isVerbose()) {
+                    e.printStackTrace();
+                }
             }
             return 1;
         }

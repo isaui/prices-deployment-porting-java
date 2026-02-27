@@ -121,8 +121,9 @@ public class DeploymentServiceImpl implements DeploymentService {
                 new EnvStage(),
                 new PrepareDistStage(),
                 new PrepareComposeStage(),
-                new DockerRunStage(dockerConfig.getDockerComposeCmd()),
-                new NginxStage()));
+                new DockerRunStage(dockerConfig.getDockerComposeCmd())
+                
+                ));
 
         try {
             pipeline.execute(ctx);

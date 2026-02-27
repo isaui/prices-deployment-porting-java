@@ -88,6 +88,11 @@ public class PrepareComposeStage implements PipelineStage {
         sb.append("    depends_on:\n");
         sb.append("      postgres:\n");
         sb.append("        condition: service_healthy\n");
+        sb.append("    labels:\n");
+        sb.append("      - \"traefik.enable=true\"\n");
+        sb.append("      - \"traefik.http.routers.backend-").append(slug).append(".rule=Host(`backend-").append(slug).append(".${PRICES_DOMAIN}`)\"\n");
+        sb.append("      - \"traefik.http.routers.backend-").append(slug).append(".entrypoints=web,websecure\"\n");
+        sb.append("      - \"traefik.http.services.backend-").append(slug).append(".loadbalancer.server.port=").append(ctx.getBackendListeningPort()).append("\"\n");
         sb.append("    restart: unless-stopped\n\n");
 
         // Frontend
@@ -109,6 +114,11 @@ public class PrepareComposeStage implements PipelineStage {
         sb.append("    networks:\n");
         sb.append("      - ").append(networkName).append("\n");
         sb.append("      - prices-proxy-network\n");
+        sb.append("    labels:\n");
+        sb.append("      - \"traefik.enable=true\"\n");
+        sb.append("      - \"traefik.http.routers.frontend-").append(slug).append(".rule=Host(`frontend-").append(slug).append(".${PRICES_DOMAIN}`)\"\n");
+        sb.append("      - \"traefik.http.routers.frontend-").append(slug).append(".entrypoints=web,websecure\"\n");
+        sb.append("      - \"traefik.http.services.frontend-").append(slug).append(".loadbalancer.server.port=").append(ctx.getFrontendListeningPort()).append("\"\n");
         sb.append("    restart: unless-stopped\n\n");
 
         // Networks

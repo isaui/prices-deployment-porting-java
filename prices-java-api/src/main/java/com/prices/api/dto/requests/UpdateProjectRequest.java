@@ -22,4 +22,7 @@ public class UpdateProjectRequest {
     private Boolean isDefaultMonitoringActive;
     private Boolean isCustomMonitoringActive;
     private Boolean needMonitoringExposed;
+
+    private Integer frontendListeningPort;
+    private Integer backendListeningPort;
 }

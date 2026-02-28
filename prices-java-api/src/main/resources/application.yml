@@ -10,6 +10,15 @@ micronaut:
   security:
     authentication: bearer
     intercept-url-map:
+      - pattern: /swagger/**
+        access:
+          - isAnonymous()
+      - pattern: /swagger-ui/**
+        access:
+          - isAnonymous()
+      - pattern: /rapidoc/**
+        access:
+          - isAnonymous()
       - pattern: /api/auth/login
         http-method: POST
         access:

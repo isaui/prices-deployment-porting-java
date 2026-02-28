@@ -4,7 +4,6 @@ import com.prices.api.services.deployment.DeploymentContext;
 import com.prices.api.services.deployment.PipelineStage;
 import com.prices.api.utils.NamingUtils;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 
 import java.sql.Connection;
 import java.sql.DriverManager;

@@ -53,6 +53,13 @@ public class DeploymentContext {
     // Docker compose command
     private String[] dockerComposeCmd;
 
+    // Database
+    private String dbHost;
+    private int dbPort = 5432;
+    private String dbName;
+    private String dbUsername;
+    private String dbPassword;
+
     // State
     private Path extractedPath;
     private Path composePath;

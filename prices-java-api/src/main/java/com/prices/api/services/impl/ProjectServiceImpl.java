@@ -1,5 +1,6 @@
 package com.prices.api.services.impl;
 
+import com.prices.api.config.DatabaseConfig;
 import com.prices.api.constants.Constants;
 import com.prices.api.dto.requests.CreateProjectRequest;
 import com.prices.api.dto.requests.UpdateProjectRequest;
@@ -37,6 +38,7 @@ public class ProjectServiceImpl implements ProjectService {
 
     private final ProjectRepository projectRepo;
     private final DeploymentHistoryRepository deploymentRepo;
+    private final DatabaseConfig databaseConfig;
 
     @Override
     @Transactional
@@ -194,7 +196,13 @@ public class ProjectServiceImpl implements ProjectService {
             ctx.setComposePath(deployDir.resolve("docker-compose.yml"));
 
             // Re-use logic from CleanupStage
-            new CleanupStage(detectDockerComposeCmd()).execute(ctx);
+            new CleanupStage(
+                    detectDockerComposeCmd(),
+                    databaseConfig.getHost(),
+                    databaseConfig.getPort(),
+                    databaseConfig.getDeployerUser(),
+                    databaseConfig.getDeployerPassword()
+            ).execute(ctx);
 
         } catch (Exception e) {
             log.warn("Cleanup pipeline failed for project: {}", project.getSlug(), e);

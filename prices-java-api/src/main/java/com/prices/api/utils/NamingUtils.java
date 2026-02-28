@@ -38,6 +38,14 @@ public class NamingUtils {
         return String.format("prices-%s_%s", slug, volume);
     }
 
+    public static String dbName(String slug) {
+        return slug + "_db";
+    }
+
+    public static String dbUser(String slug) {
+        return slug + "_user";
+    }
+
     public static String generateSecurePassword(int length) {
         SecureRandom random = new SecureRandom();
         byte[] bytes = new byte[length];

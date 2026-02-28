@@ -23,33 +23,32 @@ public class EnvStage implements PipelineStage {
     public void execute(DeploymentContext ctx) throws Exception {
         Map<String, String> finalEnvVars = ctx.getFinalEnvVars();
 
-        // 1. Start with defaults (auto-provided)
-        Map<String, String> defaults = getDefaultEnvVars(ctx);
-        finalEnvVars.putAll(defaults);
-        ctx.addLog(String.format("Applied %d default env vars", defaults.size()));
-
-        // 2. Merge ExistingEnvVars (overrides defaults)
-        if (ctx.getExistingEnvVars() != null && !ctx.getExistingEnvVars().isEmpty()) {
-            finalEnvVars.putAll(ctx.getExistingEnvVars());
-            ctx.addLog(String.format("Merged %d existing env vars", ctx.getExistingEnvVars().size()));
-        }
-
-        // 3. Merge InputEnvVars (overrides both)
-        if (ctx.getInputEnvVars() != null && !ctx.getInputEnvVars().isEmpty()) {
-            finalEnvVars.putAll(ctx.getInputEnvVars());
-            ctx.addLog(String.format("Merged %d input env vars", ctx.getInputEnvVars().size()));
-        }
-
-        // 4. Ensure all default keys are present (fill missing ones)
-        int missingCount = 0;
-        for (Map.Entry<String, String> entry : defaults.entrySet()) {
-            if (!finalEnvVars.containsKey(entry.getKey())) {
-                finalEnvVars.put(entry.getKey(), entry.getValue());
-                missingCount++;
+        if (ctx.isRedeploy()) {
+            // Redeploy: start with existing env vars, only merge input overrides
+            if (ctx.getExistingEnvVars() != null && !ctx.getExistingEnvVars().isEmpty()) {
+                finalEnvVars.putAll(ctx.getExistingEnvVars());
+                ctx.addLog(String.format("Redeploy: loaded %d existing env vars", ctx.getExistingEnvVars().size()));
             }
-        }
-        if (missingCount > 0) {
-            ctx.addLog(String.format("Restored %d missing default env vars", missingCount));
+
+            if (ctx.getInputEnvVars() != null && !ctx.getInputEnvVars().isEmpty()) {
+                finalEnvVars.putAll(ctx.getInputEnvVars());
+                ctx.addLog(String.format("Merged %d input env vars", ctx.getInputEnvVars().size()));
+            }
+        } else {
+            // First deploy: generate defaults, then merge existing and input
+            Map<String, String> defaults = getDefaultEnvVars(ctx);
+            finalEnvVars.putAll(defaults);
+            ctx.addLog(String.format("Applied %d default env vars", defaults.size()));
+
+            if (ctx.getExistingEnvVars() != null && !ctx.getExistingEnvVars().isEmpty()) {
+                finalEnvVars.putAll(ctx.getExistingEnvVars());
+                ctx.addLog(String.format("Merged %d existing env vars", ctx.getExistingEnvVars().size()));
+            }
+
+            if (ctx.getInputEnvVars() != null && !ctx.getInputEnvVars().isEmpty()) {
+                finalEnvVars.putAll(ctx.getInputEnvVars());
+                ctx.addLog(String.format("Merged %d input env vars", ctx.getInputEnvVars().size()));
+            }
         }
 
         // Log summary
@@ -74,11 +73,12 @@ public class EnvStage implements PipelineStage {
     private Map<String, String> getDefaultEnvVars(DeploymentContext ctx) {
         String slug = ctx.getProjectSlug();
 
-        // Backend config
-        String dbURL = NamingUtils.databaseURL(slug);
-        String dbName = slug;
-        String dbUser = "postgres";
-        String dbPassword = NamingUtils.generateSecurePassword(16);
+        // Backend config - use external DB credentials from context
+        String dbURL = String.format("jdbc:postgresql://%s:%d/%s", 
+                ctx.getDbHost(), ctx.getDbPort(), ctx.getDbName());
+        String dbName = ctx.getDbName();
+        String dbUser = ctx.getDbUsername();
+        String dbPassword = ctx.getDbPassword();
 
         // Frontend URLs
         String backendURL = NamingUtils.fullURL(ctx.getDefaultBackendURL());

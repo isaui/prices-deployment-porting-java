@@ -1,6 +1,5 @@
 package com.prices.api.services.deployment.stages;
 
-import com.prices.api.constants.Constants;
 import com.prices.api.services.deployment.DeploymentContext;
 import com.prices.api.services.deployment.PipelineStage;
 import com.prices.api.utils.NamingUtils;
@@ -12,7 +11,10 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -22,9 +24,18 @@ import java.util.stream.Stream;
 public class CleanupStage implements PipelineStage {
 
     private final String[] dockerComposeCmd;
+    private final String externalDbHost;
+    private final int externalDbPort;
+    private final String deployerUser;
+    private final String deployerPassword;
 
-    public CleanupStage(String[] dockerComposeCmd) {
+    public CleanupStage(String[] dockerComposeCmd, String externalDbHost, int externalDbPort,
+                        String deployerUser, String deployerPassword) {
         this.dockerComposeCmd = dockerComposeCmd;
+        this.externalDbHost = externalDbHost;
+        this.externalDbPort = externalDbPort;
+        this.deployerUser = deployerUser;
+        this.deployerPassword = deployerPassword;
     }
 
     @Override
@@ -76,26 +87,10 @@ public class CleanupStage implements PipelineStage {
         removeImage(ctx, frontendImage);
         removeImage(ctx, backendImage);
 
-        // 3. Remove nginx config
-        String configFileName = ctx.getProjectSlug() + ".conf";
-        Path configPath = Paths.get(Constants.NGINX_CONFIG_DIR, configFileName);
-        try {
-            if (Files.deleteIfExists(configPath)) {
-                ctx.addLog("Removed nginx config: " + configPath);
-            }
-        } catch (IOException e) {
-            ctx.addLog("Warning: failed to remove nginx config: " + e.getMessage());
-        }
+        // 3. Drop database and user
+        cleanupDatabase(ctx);
 
-        // 4. Reload nginx
-        try {
-            executeDockerExec("nginx", "-s", "reload");
-            ctx.addLog("Nginx reloaded");
-        } catch (Exception e) {
-            ctx.addLog("Warning: nginx reload failed: " + e.getMessage());
-        }
-
-        // 5. Remove extracted files
+        // 4. Remove extracted files
         if (ctx.getExtractedPath() != null && Files.exists(ctx.getExtractedPath())) {
             try {
                 deleteDirectory(ctx.getExtractedPath());
@@ -169,17 +164,44 @@ public class CleanupStage implements PipelineStage {
         }
     }
 
-    private void executeDockerExec(String... args) throws Exception {
-        List<String> cmd = new ArrayList<>();
-        cmd.add("docker");
-        cmd.add("exec");
-        cmd.add(Constants.NGINX_CONTAINER_NAME);
-        for (String arg : args)
-            cmd.add(arg);
+    private void cleanupDatabase(DeploymentContext ctx) {
+        String slug = ctx.getProjectSlug();
+        String dbName = NamingUtils.dbName(slug);
+        String dbUser = NamingUtils.dbUser(slug);
 
-        ProcessBuilder pb = new ProcessBuilder(cmd);
-        Process process = pb.start();
-        process.waitFor();
+        ctx.addLog("Dropping database and user...");
+        String jdbcUrl = String.format("jdbc:postgresql://%s:%d/postgres", externalDbHost, externalDbPort);
+
+        try (Connection conn = DriverManager.getConnection(jdbcUrl, deployerUser, deployerPassword)) {
+            // Terminate existing connections
+            String terminateSql = String.format(
+                    "SELECT pg_terminate_backend(pg_stat_activity.pid) " +
+                    "FROM pg_stat_activity " +
+                    "WHERE pg_stat_activity.datname = '%s' " +
+                    "AND pid <> pg_backend_pid()",
+                    dbName.replace("'", "''"));
+            try (Statement stmt = conn.createStatement()) {
+                stmt.execute(terminateSql);
+            }
+
+            // Drop database
+            String dropDbSql = String.format("DROP DATABASE IF EXISTS \"%s\"", dbName);
+            try (Statement stmt = conn.createStatement()) {
+                stmt.execute(dropDbSql);
+            }
+            ctx.addLog(String.format("Dropped database: %s", dbName));
+
+            // Drop user
+            String dropUserSql = String.format("DROP USER IF EXISTS \"%s\"", dbUser);
+            try (Statement stmt = conn.createStatement()) {
+                stmt.execute(dropUserSql);
+            }
+            ctx.addLog(String.format("Dropped user: %s", dbUser));
+
+        } catch (SQLException e) {
+            ctx.addLog(String.format("Warning: database cleanup failed: %s", e.getMessage()));
+            log.error("Failed to cleanup database for project: {}", ctx.getProjectSlug(), e);
+        }
     }
 
     private void deleteDirectory(Path path) throws IOException {

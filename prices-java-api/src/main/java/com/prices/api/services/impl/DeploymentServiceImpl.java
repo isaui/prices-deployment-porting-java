@@ -1,5 +1,6 @@
 package com.prices.api.services.impl;
 
+import com.prices.api.config.DatabaseConfig;
 import com.prices.api.config.DockerConfig;
 import com.prices.api.dto.requests.DeployRequest;
 import com.prices.api.models.DeploymentHistory;
@@ -35,6 +36,7 @@ public class DeploymentServiceImpl implements DeploymentService {
     private final DeploymentHistoryRepository deploymentRepo;
     private final ProjectRepository projectRepo;
     private final DockerConfig dockerConfig;
+    private final DatabaseConfig databaseConfig;
 
     // Active log streams
     private final Map<Long, Sinks.Many<String>> logSinks = new ConcurrentHashMap<>();
@@ -118,11 +120,17 @@ public class DeploymentServiceImpl implements DeploymentService {
 
         DeploymentPipeline pipeline = new DeploymentPipeline(List.of(
                 new ExtractStage(),
+                new PrepareExternalDatabaseStage(
+                        databaseConfig.getHost(),
+                        databaseConfig.getPort(),
+                        databaseConfig.getDeployerUser(),
+                        databaseConfig.getDeployerPassword()
+                ),
                 new EnvStage(),
                 new PrepareDistStage(),
                 new PrepareComposeStage(),
-                new DockerRunStage(dockerConfig.getDockerComposeCmd())
-                
+                new DockerRunStage(dockerConfig.getDockerComposeCmd()),
+                new DatabaseSeedStage()
                 ));
 
         try {

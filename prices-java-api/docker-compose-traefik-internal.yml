@@ -55,7 +55,7 @@ services:
     restart: unless-stopped
 
   traefik:
-    image: traefik:v3.0
+    image: traefik:3.6
     container_name: prices-traefik
     command:
       - "--api.dashboard=true"
@@ -77,6 +77,11 @@ services:
       - ./docker-vol/traefik/dynamic:/etc/traefik/dynamic
     networks:
       - prices-proxy-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.traefik.rule=Host(`traefik.${PRICES_DOMAIN:-skripsi.isacitra.com}`)"
+      - "traefik.http.routers.traefik.entrypoints=web,websecure"
+      - "traefik.http.services.traefik.loadbalancer.server.port=8080"
     restart: unless-stopped
 
   portainer:

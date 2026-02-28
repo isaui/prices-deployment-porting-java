@@ -50,7 +50,7 @@ dependencies {
 
     runtimeOnly("ch.qos.logback:logback-classic")
     runtimeOnly("org.postgresql:postgresql")
-    runtimeOnly("org.yaml:snakeyaml")
+    implementation("org.yaml:snakeyaml:2.2")
 
     testImplementation("io.micronaut:micronaut-http-client")
     testImplementation("io.micronaut.test:micronaut-test-junit5")

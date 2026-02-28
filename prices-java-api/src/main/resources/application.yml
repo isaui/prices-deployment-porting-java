@@ -49,3 +49,10 @@ jpa:
         hbm2ddl:
           auto: update
         show_sql: true
+
+database:
+  external:
+    host: ${DB_DEPLOYER_HOST:10.119.106.82}
+    port: ${DB_DEPLOYER_PORT:5432}
+    deployer-user: ${DB_DEPLOYER_USER:prices}
+    deployer-password: ${DB_DEPLOYER_PASSWORD:prices123}

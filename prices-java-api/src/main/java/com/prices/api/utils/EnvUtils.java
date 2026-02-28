@@ -12,4 +12,8 @@ public class EnvUtils {
     public static String getParentDomain() {
         return getEnv("PRICES_DOMAIN", "prices.dev");
     }
+
+    public static String getProtocol() {
+        return getEnv("PRICES_PROTOCOL", "https");
+    }
 }

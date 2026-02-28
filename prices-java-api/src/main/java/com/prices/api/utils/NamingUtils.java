@@ -20,14 +20,14 @@ public class NamingUtils {
         if (domain == null || domain.isEmpty()) {
             return "";
         }
-        return String.format("https://%s", domain);
+        return String.format("%s://%s", EnvUtils.getProtocol(), domain);
     }
 
     public static String staticURL(String domain) {
         if (domain == null || domain.isEmpty()) {
             return "";
         }
-        return String.format("https://%s/static", domain);
+        return String.format("%s://%s/static", EnvUtils.getProtocol(), domain);
     }
 
     public static String databaseURL(String slug) {

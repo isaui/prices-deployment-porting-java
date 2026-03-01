@@ -54,6 +54,7 @@ public class ProjectCommand implements Callable<Integer> {
             
             System.out.println("Project: " + project.getName() + " (" + project.getSlug() + ")");
             System.out.println("ID: " + project.getId());
+            System.out.println("Type: " + (project.getProjectType() != null ? project.getProjectType() : "regular"));
             System.out.println("Status: " + project.getStatus());
             System.out.println("Description: " + (project.getDescription() != null ? project.getDescription() : "-"));
             System.out.println("Created At: " + project.getCreatedAt());

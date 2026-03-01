@@ -139,4 +139,61 @@ public class UploadHandler {
     public void cleanupSession(String projectSlug) {
         uploadService.cleanupSession(projectSlug);
     }
+
+    // =========================================================================
+    // Internal methods (no auth checks - used by InternalController)
+    // =========================================================================
+
+    public HttpResponse<?> initUploadInternal(String projectSlug, String fileName, long totalSize, int totalChunks) {
+        UploadSession session = uploadService.initUpload(projectSlug, fileName, totalSize, totalChunks);
+        if (session == null) {
+            return HttpResponse.serverError(ApiResponse.error("Failed to init upload"));
+        }
+        
+        return HttpResponse.ok(ApiResponse.success(Map.of(
+            "uploadId", session.projectSlug(),
+            "chunkSize", 5 * 1024 * 1024
+        )));
+    }
+
+    public HttpResponse<?> uploadChunkInternal(String projectSlug, int index, CompletedFileUpload chunk) {
+        try {
+            byte[] chunkData = chunk.getBytes();
+            int uploaded = uploadService.uploadChunk(projectSlug, index, chunkData);
+            
+            UploadSession session = uploadService.getStatus(projectSlug);
+            int total = session != null ? session.totalChunks() : 0;
+            
+            return HttpResponse.ok(ApiResponse.success(Map.of(
+                "uploaded", uploaded,
+                "total", total,
+                "complete", uploaded == total
+            )));
+        } catch (UploadService.UploadException e) {
+            if (e.getMessage().contains("not found")) {
+                return HttpResponse.notFound(ApiResponse.error(e.getMessage()));
+            }
+            return HttpResponse.badRequest(ApiResponse.error(e.getMessage()));
+        } catch (IOException e) {
+            return HttpResponse.serverError(ApiResponse.error("Failed to read chunk: " + e.getMessage()));
+        }
+    }
+
+    public HttpResponse<?> finalizeUploadInternal(String projectSlug) {
+        try {
+            Path finalPath = uploadService.finalizeUpload(projectSlug);
+            UploadSession session = uploadService.getStatus(projectSlug);
+            
+            return HttpResponse.ok(ApiResponse.success(Map.of(
+                "uploadId", projectSlug,
+                "path", finalPath.toString(),
+                "size", session != null ? session.totalSize() : 0
+            )));
+        } catch (UploadService.UploadException e) {
+            if (e.getMessage().contains("not found")) {
+                return HttpResponse.notFound(ApiResponse.error(e.getMessage()));
+            }
+            return HttpResponse.badRequest(ApiResponse.error(e.getMessage()));
+        }
+    }
 }

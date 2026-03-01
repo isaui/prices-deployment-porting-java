@@ -44,6 +44,7 @@ public class MapperUtils {
         resp.setBackendListeningPort(p.getBackendListeningPort());
 
         resp.setUserId(p.getUserId());
+        resp.setProjectType(p.getProjectType());
         resp.setCreatedAt(p.getCreatedAt());
         resp.setUpdatedAt(p.getUpdatedAt());
 

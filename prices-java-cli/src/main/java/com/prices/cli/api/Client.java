@@ -133,7 +133,7 @@ public class Client {
 
     public List<Project> listProjects() throws IOException, InterruptedException {
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(baseUrl + "/api/projects/me"))
+                .uri(URI.create(baseUrl + "/api/projects"))
                 .header("Authorization", "Bearer " + token)
                 .GET()
                 .build();

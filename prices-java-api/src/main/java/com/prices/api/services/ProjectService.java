@@ -35,4 +35,6 @@ public interface ProjectService {
     void updateEnvVars(Long projectId, Map<String, String> envVars);
 
     void upsertEnvVars(Long projectId, Map<String, String> envVars);
+
+    Project createInternal(Project project);
 }

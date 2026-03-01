@@ -58,8 +58,11 @@ public class Project {
     @Column(columnDefinition = "integer default 7776")
     private Integer backendListeningPort = 7776;
 
-    @Column(name = "user_id", nullable = false)
+    @Column(name = "user_id")
     private Long userId;
+
+    @Column(columnDefinition = "varchar(20) default 'regular'")
+    private String projectType = "regular";  // "regular" or "ssh"
 
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")

@@ -395,4 +395,28 @@ public class ProjectServiceImpl implements ProjectService {
         }
         return new String[] { "docker-compose" };
     }
+
+    @Override
+    @Transactional
+    public Project createInternal(Project project) {
+        String parentDomain = EnvUtils.getParentDomain();
+        
+        // Set default URLs if not provided
+        if (project.getDefaultFrontendUrl() == null) {
+            project.setDefaultFrontendUrl("frontend-" + project.getSlug() + "." + parentDomain);
+        }
+        if (project.getDefaultBackendUrl() == null) {
+            project.setDefaultBackendUrl("backend-" + project.getSlug() + "." + parentDomain);
+        }
+        if (project.getDefaultMonitoringUrl() == null) {
+            project.setDefaultMonitoringUrl("monitoring-" + project.getSlug() + "." + parentDomain);
+        }
+        
+        // Ensure status is set
+        if (project.getStatus() == null) {
+            project.setStatus("pending");
+        }
+        
+        return projectRepo.save(project);
+    }
 }

@@ -37,6 +37,7 @@ public class ProjectResponse {
     private Integer backendListeningPort;
 
     private Long userId;
+    private String projectType;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

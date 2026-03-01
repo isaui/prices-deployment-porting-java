@@ -55,28 +55,13 @@ public class InternalController {
         log.info("Internal API: Creating SSH project: {}", request.getName());
         
         try {
-            Project project = new Project();
-            project.setName(request.getName());
-            project.setSlug(request.getName().toLowerCase().replaceAll("[^a-z0-9-]", "-"));
-            project.setProjectType("ssh");
-            project.setUserId(null);  // SSH projects have no user
-            
-            if (request.getFrontendUrl() != null) {
-                project.setCustomFrontendUrl(request.getFrontendUrl());
-                project.setCustomFrontendActive(true);
-            }
-            if (request.getBackendUrl() != null) {
-                project.setCustomBackendUrl(request.getBackendUrl());
-                project.setCustomBackendActive(true);
-            }
-            if (request.getFrontendPort() != null) {
-                project.setFrontendListeningPort(request.getFrontendPort());
-            }
-            if (request.getBackendPort() != null) {
-                project.setBackendListeningPort(request.getBackendPort());
-            }
-            
-            Project saved = projectService.createInternal(project);
+            Project saved = projectService.createInternalProject(
+                    request.getName(),
+                    request.getCustomFrontendUrl(),
+                    request.getCustomBackendUrl(),
+                    request.getFrontendListeningPort(),
+                    request.getBackendListeningPort()
+            );
             
             return HttpResponse.created(ApiResponse.success("Project created", Map.of(
                     "projectId", saved.getId(),
@@ -125,14 +110,22 @@ public class InternalController {
         log.info("Internal API: Deploy project ID: {}", projectId);
         
         try {
-            Project project = projectService.getById(projectId);
-            if (project == null) {
+            Project project;
+            try {
+                project = projectService.getById(projectId);
+            } catch (RuntimeException e) {
+                log.error("Project not found: {}", projectId);
                 return HttpResponse.notFound(ApiResponse.error("Project not found"));
             }
             
+            log.info("Deploy: Project slug={}, looking for artifact", project.getSlug());
+            
             // Get artifact path from upload
             Path artifactPath = uploadHandler.getFinalPath(project.getSlug());
+            log.info("Deploy: artifactPath={}", artifactPath);
+            
             if (artifactPath == null || !Files.exists(artifactPath)) {
+                log.error("Artifact not found for slug={}, path={}", project.getSlug(), artifactPath);
                 return HttpResponse.badRequest(ApiResponse.error("Artifact not uploaded or not finalized"));
             }
             

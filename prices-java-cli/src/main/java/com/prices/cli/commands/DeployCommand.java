@@ -119,20 +119,6 @@ public class DeployCommand implements Callable<Integer> {
             
             if ("success".equalsIgnoreCase(dep.getStatus())) {
                 System.out.println("\n✓ Deployed successfully!");
-                Project p = dep.getProject();
-                if (p != null) {
-                    if (p.isDefaultFrontendActive() && p.getDefaultFrontendURL() != null) {
-                        System.out.println("  Frontend: " + UrlUtil.fullUrl(p.getDefaultFrontendURL()));
-                    }
-                    if (p.isDefaultBackendActive() && p.getDefaultBackendURL() != null) {
-                        System.out.println("  Backend:  " + UrlUtil.fullUrl(p.getDefaultBackendURL()));
-                    }
-                    if (p.isNeedMonitoringExposed() && p.getDefaultMonitoringURL() != null) {
-                        System.out.println("  Monitoring: " + UrlUtil.fullUrl(p.getDefaultMonitoringURL()));
-                    }
-                }
-                System.out.println("  Status: prices status " + targetSlug);
-                System.out.println("  Logs: prices logs " + targetSlug);
                 return 0;
             } else {
                 System.out.println("\n✗ Deployment failed: " + (dep.getError() != null ? dep.getError() : "Unknown error"));

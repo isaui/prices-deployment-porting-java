@@ -15,7 +15,7 @@ public class DeploymentHistory {
     @Column(name = "project_id", nullable = false)
     private Long projectId;
 
-    @Column(name = "user_id", nullable = false)
+    @Column(name = "user_id")
     private Long userId;
 
     @Enumerated(EnumType.STRING)

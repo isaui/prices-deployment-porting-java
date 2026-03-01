@@ -398,25 +398,44 @@ public class ProjectServiceImpl implements ProjectService {
 
     @Override
     @Transactional
-    public Project createInternal(Project project) {
+    public Project createInternalProject(String name, String customFrontendUrl, String customBackendUrl,
+                                          Integer frontendPort, Integer backendPort) {
+        String slug = SlugUtils.generateSlug(name);
         String parentDomain = EnvUtils.getParentDomain();
-        
-        // Set default URLs if not provided
-        if (project.getDefaultFrontendUrl() == null) {
-            project.setDefaultFrontendUrl("frontend-" + project.getSlug() + "." + parentDomain);
+
+        Project project = new Project();
+        project.setName(name);
+        project.setSlug(slug);
+        project.setStatus("pending");
+        project.setUserId(null);  // Internal/SSH projects have no user
+        project.setProjectType("ssh");
+
+        // Frontend URLs
+        project.setDefaultFrontendUrl("frontend-" + slug + "." + parentDomain);
+        project.setCustomFrontendUrl(customFrontendUrl);
+        project.setDefaultFrontendActive(true);
+        project.setCustomFrontendActive(customFrontendUrl != null && !customFrontendUrl.isEmpty());
+
+        // Backend URLs
+        project.setDefaultBackendUrl("backend-" + slug + "." + parentDomain);
+        project.setCustomBackendUrl(customBackendUrl);
+        project.setDefaultBackendActive(true);
+        project.setCustomBackendActive(customBackendUrl != null && !customBackendUrl.isEmpty());
+
+        // Monitoring URLs
+        project.setDefaultMonitoringUrl("monitoring-" + slug + "." + parentDomain);
+        project.setDefaultMonitoringActive(false);
+        project.setCustomMonitoringActive(false);
+        project.setNeedMonitoringExposed(false);
+
+        // Listening ports
+        if (frontendPort != null) {
+            project.setFrontendListeningPort(frontendPort);
         }
-        if (project.getDefaultBackendUrl() == null) {
-            project.setDefaultBackendUrl("backend-" + project.getSlug() + "." + parentDomain);
+        if (backendPort != null) {
+            project.setBackendListeningPort(backendPort);
         }
-        if (project.getDefaultMonitoringUrl() == null) {
-            project.setDefaultMonitoringUrl("monitoring-" + project.getSlug() + "." + parentDomain);
-        }
-        
-        // Ensure status is set
-        if (project.getStatus() == null) {
-            project.setStatus("pending");
-        }
-        
+
         return projectRepo.save(project);
     }
 }

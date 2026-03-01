@@ -36,5 +36,6 @@ public interface ProjectService {
 
     void upsertEnvVars(Long projectId, Map<String, String> envVars);
 
-    Project createInternal(Project project);
+    Project createInternalProject(String name, String customFrontendUrl, String customBackendUrl, 
+                                   Integer frontendPort, Integer backendPort);
 }

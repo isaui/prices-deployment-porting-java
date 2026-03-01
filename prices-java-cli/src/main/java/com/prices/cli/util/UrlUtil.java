@@ -2,7 +2,7 @@ package com.prices.cli.util;
 
 public class UrlUtil {
     
-    public static final String URL_SCHEME = "https";
+    public static final String URL_SCHEME = "http";
     
     public static String fullUrl(String domain) {
         if (domain == null || domain.isEmpty()) {

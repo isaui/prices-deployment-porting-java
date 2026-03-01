@@ -15,8 +15,8 @@ public class ConfigManager {
     private static final String CONFIG_DIR = ".prices";
     private static final String CONFIG_FILE = "config.json";
 
-    public static final String DEFAULT_API_URL = "https://deploy.skripsi.isacitra.com";
-    public static final String DEFAULT_DOMAIN = "skripsi.isacitra.com";
+    public static final String DEFAULT_API_URL = "http://deploy.prices.cs.ui.ac.id";
+    public static final String DEFAULT_DOMAIN = "prices.cs.ui.ac.id";
 
     private static final String ENV_API_URL = "PRICES_API_URL";
     private static final String ENV_DOMAIN = "PRICES_DOMAIN";

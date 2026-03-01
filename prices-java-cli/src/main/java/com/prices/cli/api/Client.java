@@ -37,34 +37,42 @@ public class Client {
     public String deploy(String projectSlug, Path archivePath, String version, 
                          java.util.function.BiConsumer<Long, Long> progressCallback)
             throws IOException, InterruptedException {
+        // Use chunked upload for all files to avoid nginx 413 errors
+        return deployChunked(projectSlug, archivePath, version, progressCallback);
+    }
+
+    /**
+     * Deploy using chunked upload (bypasses nginx size limits)
+     */
+    public String deployChunked(String projectSlug, Path archivePath, String version,
+                                java.util.function.BiConsumer<Long, Long> progressCallback)
+            throws IOException, InterruptedException {
         Project project = getProject(projectSlug);
-        String boundary = "---ContentBoundary" + System.currentTimeMillis();
-
-        HttpRequest.BodyPublisher bodyPublisher = MultipartBodyPublisher.newBuilder()
-                .boundary(boundary)
-                .addPart("version", version)
-                .addFile("artifact", archivePath, "application/zip")
-                .build();
-
-        // Wrap with progress tracking
-        if (progressCallback != null) {
-            bodyPublisher = new ProgressBodyPublisher(bodyPublisher, progressCallback);
-        }
-
-        HttpClient uploadClient = HttpClient.newBuilder()
-                .connectTimeout(Duration.ofSeconds(30))
-                .build();
-
+        
+        // 1. Upload file in chunks (using projectSlug as upload ID)
+        ChunkedUploader uploader = new ChunkedUploader(baseUrl, token);
+        uploader.uploadChunked(projectSlug, archivePath, (uploaded, total) -> {
+            if (progressCallback != null) {
+                progressCallback.accept(uploaded, total);
+            }
+        });
+        
+        // 2. Deploy from uploaded file
+        Map<String, String> payload = new HashMap<>();
+        payload.put("uploadId", projectSlug);  // uploadId = projectSlug
+        payload.put("version", version != null ? version : "1.0.0");
+        
+        String body = objectMapper.writeValueAsString(payload);
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(baseUrl + "/api/projects/" + project.getId() + "/deploy"))
-                .header("Content-Type", "multipart/form-data; boundary=" + boundary)
+                .uri(URI.create(baseUrl + "/api/projects/" + project.getId() + "/deploy-from-upload"))
+                .header("Content-Type", "application/json")
                 .header("Authorization", "Bearer " + token)
-                .POST(bodyPublisher)
+                .POST(HttpRequest.BodyPublishers.ofString(body))
                 .timeout(Duration.ofMinutes(10))
                 .build();
-
-        HttpResponse<String> response = uploadClient.send(request, HttpResponse.BodyHandlers.ofString());
-
+        
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        
         if (response.statusCode() >= 400) {
             try {
                 ApiResponse<?> apiResp = objectMapper.readValue(response.body(), ApiResponse.class);
@@ -72,18 +80,17 @@ public class Client {
                     throw new IOException("Deployment failed: " + apiResp.getMessage());
                 }
             } catch (IOException e) {
-                // ignore
+                // ignore parsing error
             }
             throw new IOException("Deployment failed: " + response.statusCode() + " - " + response.body());
         }
-
+        
         ApiResponse<Deployment> apiResponse = objectMapper.readValue(response.body(),
-                new TypeReference<ApiResponse<Deployment>>() {
-                });
+                new TypeReference<ApiResponse<Deployment>>() {});
         if (!apiResponse.isSuccess()) {
             throw new IOException("Deployment failed: " + apiResponse.getMessage());
         }
-
+        
         return String.valueOf(apiResponse.getData().getId());
     }
 

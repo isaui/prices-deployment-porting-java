@@ -52,6 +52,15 @@ public class MultipartBodyPublisher {
             return this;
         }
 
+        public Builder addBinaryPart(String name, String filename, byte[] data, String contentType) {
+            parts.add(("--" + boundary + "\r\n").getBytes(StandardCharsets.UTF_8));
+            parts.add(("Content-Disposition: form-data; name=\"" + name + "\"; filename=\"" + filename + "\"\r\n").getBytes(StandardCharsets.UTF_8));
+            parts.add(("Content-Type: " + contentType + "\r\n\r\n").getBytes(StandardCharsets.UTF_8));
+            parts.add(data);
+            parts.add(("\r\n").getBytes(StandardCharsets.UTF_8));
+            return this;
+        }
+
         public HttpRequest.BodyPublisher build() {
             parts.add(("--" + boundary + "--\r\n").getBytes(StandardCharsets.UTF_8));
             

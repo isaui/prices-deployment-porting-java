@@ -13,6 +13,8 @@ import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 
 import io.micronaut.http.sse.Event;
@@ -67,6 +69,29 @@ public class DeploymentHandler {
                     MapperUtils.toDeploymentHistoryResponse(deployment)));
         } catch (Exception e) {
             return HttpResponse.notFound(ErrorResponse.error("Deployment not found"));
+        }
+    }
+
+    public HttpResponse<?> deployFromUpload(Long projectId, Long userId, Path artifactPath, String version) {
+        if (artifactPath == null || !Files.exists(artifactPath)) {
+            return HttpResponse.badRequest(ErrorResponse.error("Artifact file not found"));
+        }
+
+        try {
+            byte[] artifactData = Files.readAllBytes(artifactPath);
+            DeployRequest req = new DeployRequest();
+            req.setProjectID(projectId);
+            req.setUserID(userId);
+            req.setVersion(version != null ? version : "1.0.0");
+            req.setArtifactData(artifactData);
+
+            DeploymentHistory deployment = deploymentService.deploy(req);
+            return HttpResponse.status(HttpStatus.ACCEPTED).body(
+                    ApiResponse.success("Deployment started", MapperUtils.toDeploymentHistoryResponse(deployment)));
+        } catch (IOException e) {
+            return HttpResponse.serverError(ErrorResponse.error("Failed to read artifact file"));
+        } catch (Exception e) {
+            return HttpResponse.serverError(ErrorResponse.error(e.getMessage()));
         }
     }
 }

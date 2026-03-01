@@ -1,6 +1,8 @@
 package com.prices.api.controllers;
 
+import com.prices.api.dto.responses.ApiResponse;
 import com.prices.api.handlers.DeploymentHandler;
+import com.prices.api.handlers.UploadHandler;
 import io.micronaut.core.annotation.Nullable;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.MediaType;
@@ -12,6 +14,7 @@ import io.micronaut.security.annotation.Secured;
 import io.micronaut.security.rules.SecurityRule;
 import lombok.RequiredArgsConstructor;
 
+import java.nio.file.Path;
 import java.security.Principal;
 
 import io.micronaut.http.sse.Event;
@@ -24,6 +27,7 @@ import org.reactivestreams.Publisher;
 public class DeploymentController {
 
     private final DeploymentHandler handler;
+    private final UploadHandler uploadHandler;
 
     @Get(value = "/api/deployments/{id}/stream", produces = MediaType.TEXT_EVENT_STREAM)
     public Publisher<Event<String>> getLogs(@PathVariable Long id) {
@@ -48,5 +52,33 @@ public class DeploymentController {
     @Get("/api/deployments/{id}")
     public HttpResponse<?> getStatus(@PathVariable Long id) {
         return handler.getStatus(id);
+    }
+
+    /**
+     * Deploy from a previously uploaded chunked file
+     */
+    @Post("/api/projects/{id}/deploy-from-upload")
+    public HttpResponse<?> deployFromUpload(
+            Principal principal,
+            @PathVariable Long id,
+            @Body DeployFromUploadRequest request) {
+        Long userId = Long.parseLong(principal.getName());
+        
+        Path artifactPath = uploadHandler.getFinalPath(request.uploadId);
+        if (artifactPath == null) {
+            return HttpResponse.badRequest(ApiResponse.error("Upload not found or not finalized"));
+        }
+        
+        HttpResponse<?> response = handler.deployFromUpload(id, userId, artifactPath, request.version);
+        
+        // Cleanup upload after deployment starts
+        uploadHandler.cleanupSession(request.uploadId);
+        
+        return response;
+    }
+
+    public static class DeployFromUploadRequest {
+        public String uploadId;
+        public String version;
     }
 }

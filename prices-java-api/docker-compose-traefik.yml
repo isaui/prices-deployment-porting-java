@@ -23,6 +23,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./docker-vol/deployments:/var/prices/deployments
       - ./docker-vol/traefik:/var/prices/traefik
+      - ./docker-vol/uploads:/var/prices/uploads
     depends_on:
       postgres:
         condition: service_healthy

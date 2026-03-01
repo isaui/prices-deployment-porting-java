@@ -134,8 +134,8 @@ public class DeploySshCommand implements Callable<Integer> {
     }
 
     private String buildDeployCommand(String remoteArtifact) {
-        // Use stdbuf to disable output buffering for real-time streaming
-        StringBuilder cmd = new StringBuilder("stdbuf -oL -eL " + REMOTE_DEPLOY_SCRIPT);
+        // Run deploy script directly - script uses echo for immediate output
+        StringBuilder cmd = new StringBuilder(REMOTE_DEPLOY_SCRIPT);
         cmd.append(" --project-name ").append(quote(projectName));
         cmd.append(" --artifact ").append(remoteArtifact);
         if (frontendUrl != null) cmd.append(" --frontend-url ").append(quote(frontendUrl));
@@ -156,19 +156,19 @@ public class DeploySshCommand implements Callable<Integer> {
 
     private int runScp(String localPath, String remotePath) throws Exception {
         String[] cmd = {"scp", "-o", "BatchMode=no", localPath, sshHost + ":" + remotePath};
-        return runInteractiveCommand(cmd);
+        return runInteractiveCommand(cmd, true);
     }
 
     private int runSsh(String remoteCmd, boolean showOutput) throws Exception {
         String[] cmd = {"ssh", "-o", "BatchMode=no", "-t", sshHost, remoteCmd};
-        return runInteractiveCommand(cmd);
+        return runInteractiveCommand(cmd, showOutput);
     }
 
     /**
      * Run command in a pseudo-terminal (PTY) for interactive prompts.
      * SSH reads passphrase from /dev/tty, so we need a real PTY.
      */
-    private int runInteractiveCommand(String[] cmd) throws Exception {
+    private int runInteractiveCommand(String[] cmd, boolean showOutput) throws Exception {
         // Setup PTY environment
         Map<String, String> env = new HashMap<>(System.getenv());
         env.put("TERM", "xterm");
@@ -190,8 +190,10 @@ public class DeploySshCommand implements Callable<Integer> {
             try {
                 int b;
                 while ((b = ptyOut.read()) != -1) {
-                    System.out.write(b);
-                    System.out.flush();
+                    if (showOutput) {
+                        System.out.write(b);
+                        System.out.flush();
+                    }
                 }
             } catch (IOException e) {
                 // PTY closed

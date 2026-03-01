@@ -25,20 +25,17 @@
 
 set -euo pipefail
 
+# Debug: immediate output to confirm script started
+echo "[deploy.sh] Script started"
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+echo "[deploy.sh] SCRIPT_DIR=$SCRIPT_DIR"
 
-# Colors
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m'
-
-# Log functions - use printf for immediate output (no buffering)
-log_info() { printf "${GREEN}[INFO]${NC} %s\n" "$1"; }
-log_warn() { printf "${YELLOW}[WARN]${NC} %s\n" "$1"; }
-log_error() { printf "${RED}[ERROR]${NC} %s\n" "$1" >&2; }
-log_step() { printf "${BLUE}[STEP]${NC} %s\n" "$1"; }
+# Simple log functions - no colors for better compatibility
+log_info() { echo "[INFO] $1"; }
+log_warn() { echo "[WARN] $1"; }
+log_error() { echo "[ERROR] $1" >&2; }
+log_step() { echo "[STEP] $1"; }
 
 # =============================================================================
 # Load Environment

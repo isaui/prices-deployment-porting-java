@@ -20,7 +20,7 @@ import java.util.Map;
  */
 public class ChunkedUploader {
 
-    private static final int CHUNK_SIZE = 5 * 1024 * 1024; // 5MB per chunk
+    private static final int CHUNK_SIZE = 900 * 1024; // ~900KB per chunk (below nginx default 1MB limit)
     
     private final String baseUrl;
     private final String token;

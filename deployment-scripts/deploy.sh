@@ -166,7 +166,12 @@ upload_artifact() {
     log_step "Uploading artifact: ${file_name} (${file_size} bytes, ${total_chunks} chunks)"
     
     # Init upload
-    local init_response=$(api_call POST "/api/internal/uploads/init" "{\"projectSlug\":\"${project_slug}\",\"fileName\":\"${file_name}\",\"totalSize\":${file_size},\"totalChunks\":${total_chunks}}")
+    local init_request="{\"projectSlug\":\"${project_slug}\",\"fileName\":\"${file_name}\",\"totalSize\":${file_size},\"totalChunks\":${total_chunks}}"
+    echo "[DEBUG] POST /api/internal/uploads/init"
+    echo "[DEBUG] Request: $init_request"
+    
+    local init_response=$(api_call POST "/api/internal/uploads/init" "$init_request")
+    echo "[DEBUG] Response: $init_response"
     
     if echo "$init_response" | grep -q '"success":false'; then
         log_error "Failed to init upload: $init_response"
@@ -202,7 +207,9 @@ upload_artifact() {
     echo ""
     
     # Finalize upload
+    echo "[DEBUG] POST /api/internal/uploads/${project_slug}/finalize"
     local finalize_response=$(api_call POST "/api/internal/uploads/${project_slug}/finalize" "")
+    echo "[DEBUG] Response: $finalize_response"
     
     if echo "$finalize_response" | grep -q '"success":false'; then
         log_error "Failed to finalize upload: $finalize_response"
@@ -216,15 +223,20 @@ upload_artifact() {
 create_project() {
     log_step "Creating project..."
     
-    # Build request
+    # Build request (matches CreateInternalProjectRequest DTO)
     local request="{\"name\":\"${PROJECT_NAME}\""
-    [[ -n "$FRONTEND_URL" ]] && request+=",\"frontendUrl\":\"${FRONTEND_URL}\""
-    [[ -n "$BACKEND_URL" ]] && request+=",\"backendUrl\":\"${BACKEND_URL}\""
-    request+=",\"frontendPort\":${FRONTEND_PORT}"
-    request+=",\"backendPort\":${BACKEND_PORT}"
+    [[ -n "$FRONTEND_URL" ]] && request+=",\"customFrontendUrl\":\"${FRONTEND_URL}\""
+    [[ -n "$BACKEND_URL" ]] && request+=",\"customBackendUrl\":\"${BACKEND_URL}\""
+    request+=",\"frontendListeningPort\":${FRONTEND_PORT}"
+    request+=",\"backendListeningPort\":${BACKEND_PORT}"
     request+="}"
     
+    echo "[DEBUG] POST /api/internal/projects"
+    echo "[DEBUG] Request: $request"
+    
     local response=$(api_call POST "/api/internal/projects" "$request")
+    
+    echo "[DEBUG] Response: $response"
     
     if echo "$response" | grep -q '"success":false'; then
         log_error "Failed to create project: $response"
@@ -234,6 +246,8 @@ create_project() {
     # Extract project ID and slug
     local project_id=$(echo "$response" | grep -o '"projectId":[0-9]*' | cut -d: -f2)
     local project_slug=$(echo "$response" | grep -o '"slug":"[^"]*"' | cut -d'"' -f4)
+    
+    echo "[DEBUG] Extracted: project_id=$project_id, slug=$project_slug"
     
     if [[ -z "$project_id" ]]; then
         log_error "Failed to get project ID from response: $response"
@@ -267,7 +281,12 @@ deploy_project() {
     # Build request
     local request="{\"version\":\"1.0.0\",\"envVars\":${env_json}}"
     
+    echo "[DEBUG] POST /api/internal/projects/${project_id}/deploy"
+    echo "[DEBUG] Request: $request"
+    
     local response=$(api_call POST "/api/internal/projects/${project_id}/deploy" "$request")
+    
+    echo "[DEBUG] Response: $response"
     
     if echo "$response" | grep -q '"success":false'; then
         log_error "Deployment failed: $response"
@@ -276,6 +295,8 @@ deploy_project() {
     
     # Extract deployment ID
     local deployment_id=$(echo "$response" | grep -o '"deploymentId":[0-9]*' | cut -d: -f2)
+    
+    echo "[DEBUG] Extracted: deployment_id=$deployment_id"
     
     if [[ -z "$deployment_id" ]]; then
         log_error "Failed to get deployment ID from response: $response"
@@ -326,14 +347,25 @@ main() {
     
     # Create project
     project_result=$(create_project)
+    echo "[DEBUG] create_project returned: $project_result"
+    
+    # Get last line (the actual result, not debug output)
+    project_result=$(echo "$project_result" | tail -1)
     project_id=$(echo "$project_result" | cut -d: -f1)
     project_slug=$(echo "$project_result" | cut -d: -f2)
+    
+    echo "[DEBUG] Parsed: project_id=$project_id, project_slug=$project_slug"
     
     # Upload artifact (use slug for upload)
     upload_artifact "$ARTIFACT" "$project_slug"
     
     # Deploy
     deployment_id=$(deploy_project "$project_id")
+    echo "[DEBUG] deploy_project returned: $deployment_id"
+    
+    # Get last line (the actual result)
+    deployment_id=$(echo "$deployment_id" | tail -1)
+    echo "[DEBUG] Parsed deployment_id: $deployment_id"
     
     # Stream logs
     stream_logs "$deployment_id"

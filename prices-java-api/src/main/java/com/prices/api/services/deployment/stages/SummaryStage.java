@@ -54,4 +54,9 @@ public class SummaryStage implements PipelineStage {
         ctx.addLog("");
         ctx.addLog("===========================================");
     }
+
+    @Override
+    public void rollback(DeploymentContext ctx) {
+        // Nothing to rollback for summary
+    }
 }

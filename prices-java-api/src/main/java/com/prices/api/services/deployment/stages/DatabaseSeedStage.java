@@ -24,46 +24,47 @@ public class DatabaseSeedStage implements PipelineStage {
     }
 
     @Override
-    public void execute(DeploymentContext ctx) throws Exception {
-        // Skip if redeploy - DB already seeded from previous deployment
-        if (ctx.isRedeploy()) {
-            ctx.addLog("Redeploy detected, skipping database seeding (data already exists)");
-            return;
-        }
+    public void execute(DeploymentContext ctx) {
+        try {
 
-        if (ctx.getBackendDistPath() == null) {
-            ctx.addLog("No backend found, skipping database seeding");
-            return;
-        }
-
-        List<Path> seedFiles = findSeedFiles(ctx.getBackendDistPath());
-        if (seedFiles.isEmpty()) {
-            ctx.addLog("No seed files found, skipping database seeding");
-            return;
-        }
-
-        ctx.addLog(String.format("Found %d seed file(s): %s", seedFiles.size(), 
-            seedFiles.stream().map(p -> p.getFileName().toString()).toList()));
-
-        waitForBackendReady(ctx);
-
-        String jdbcUrl = String.format("jdbc:postgresql://%s:%d/%s",
-                ctx.getDbHost(), ctx.getDbPort(), ctx.getDbName());
-
-        try (Connection conn = DriverManager.getConnection(jdbcUrl, ctx.getDbUsername(), ctx.getDbPassword())) {
-            ctx.addLog("Connected to database for seeding");
-
-            for (Path seedFile : seedFiles) {
-                ctx.addLog(String.format("Executing seed file: %s", seedFile.getFileName()));
-                executeSqlFile(conn, seedFile);
-                ctx.addLog(String.format("Successfully executed: %s", seedFile.getFileName()));
+            if (ctx.getBackendDistPath() == null) {
+                ctx.addLog("No backend found, skipping database seeding");
+                return;
             }
 
-            ctx.addLog("Database seeding completed successfully");
+            List<Path> seedFiles = findSeedFiles(ctx.getBackendDistPath());
+            if (seedFiles.isEmpty()) {
+                ctx.addLog("No seed files found, skipping database seeding");
+                return;
+            }
 
-        } catch (SQLException e) {
-            ctx.addLog(String.format("Database seeding failed: %s", e.getMessage()));
-            throw new Exception("Failed to seed database", e);
+            ctx.addLog(String.format("Found %d seed file(s): %s", seedFiles.size(), 
+                seedFiles.stream().map(p -> p.getFileName().toString()).toList()));
+
+            waitForBackendReady(ctx);
+
+            String jdbcUrl = String.format("jdbc:postgresql://%s:%d/%s",
+                    ctx.getDbHost(), ctx.getDbPort(), ctx.getDbName());
+
+            try (Connection conn = DriverManager.getConnection(jdbcUrl, ctx.getDbUsername(), ctx.getDbPassword())) {
+                ctx.addLog("Connected to database for seeding");
+
+                for (Path seedFile : seedFiles) {
+                    try {
+                        ctx.addLog(String.format("Executing seed file: %s", seedFile.getFileName()));
+                        executeSqlFile(conn, seedFile);
+                        ctx.addLog(String.format("Successfully executed: %s", seedFile.getFileName()));
+                    } catch (Exception e) {
+                        ctx.addLog(String.format("Warning: seed file %s failed: %s (continuing)", 
+                            seedFile.getFileName(), e.getMessage()));
+                    }
+                }
+
+                ctx.addLog("Database seeding completed");
+            }
+        } catch (Exception e) {
+            ctx.addLog(String.format("Warning: database seeding skipped: %s", e.getMessage()));
+            log.warn("Database seeding failed (non-fatal): {}", e.getMessage());
         }
     }
 

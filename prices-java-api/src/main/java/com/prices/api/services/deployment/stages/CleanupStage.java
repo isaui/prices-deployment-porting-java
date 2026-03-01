@@ -26,16 +26,16 @@ public class CleanupStage implements PipelineStage {
     private final String[] dockerComposeCmd;
     private final String externalDbHost;
     private final int externalDbPort;
-    private final String deployerUser;
-    private final String deployerPassword;
+    private final String pricesUser;
+    private final String pricesPassword;
 
     public CleanupStage(String[] dockerComposeCmd, String externalDbHost, int externalDbPort,
-                        String deployerUser, String deployerPassword) {
+                        String pricesUser, String pricesPassword) {
         this.dockerComposeCmd = dockerComposeCmd;
         this.externalDbHost = externalDbHost;
         this.externalDbPort = externalDbPort;
-        this.deployerUser = deployerUser;
-        this.deployerPassword = deployerPassword;
+        this.pricesUser = pricesUser;
+        this.pricesPassword = pricesPassword;
     }
 
     @Override
@@ -167,12 +167,11 @@ public class CleanupStage implements PipelineStage {
     private void cleanupDatabase(DeploymentContext ctx) {
         String slug = ctx.getProjectSlug();
         String dbName = NamingUtils.dbName(slug);
-        String dbUser = NamingUtils.dbUser(slug);
 
-        ctx.addLog("Dropping database and user...");
+        ctx.addLog("Dropping database...");
         String jdbcUrl = String.format("jdbc:postgresql://%s:%d/postgres", externalDbHost, externalDbPort);
 
-        try (Connection conn = DriverManager.getConnection(jdbcUrl, deployerUser, deployerPassword)) {
+        try (Connection conn = DriverManager.getConnection(jdbcUrl, pricesUser, pricesPassword)) {
             // Terminate existing connections
             String terminateSql = String.format(
                     "SELECT pg_terminate_backend(pg_stat_activity.pid) " +
@@ -190,13 +189,6 @@ public class CleanupStage implements PipelineStage {
                 stmt.execute(dropDbSql);
             }
             ctx.addLog(String.format("Dropped database: %s", dbName));
-
-            // Drop user
-            String dropUserSql = String.format("DROP USER IF EXISTS \"%s\"", dbUser);
-            try (Statement stmt = conn.createStatement()) {
-                stmt.execute(dropUserSql);
-            }
-            ctx.addLog(String.format("Dropped user: %s", dbUser));
 
         } catch (SQLException e) {
             ctx.addLog(String.format("Warning: database cleanup failed: %s", e.getMessage()));

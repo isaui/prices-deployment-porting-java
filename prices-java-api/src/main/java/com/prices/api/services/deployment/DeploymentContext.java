@@ -44,9 +44,8 @@ public class DeploymentContext {
     private int frontendListeningPort = 3000;
     private int backendListeningPort = 7776;
 
-    // Env vars
+    // Env vars (user-configured, from DB)
     private Map<String, String> existingEnvVars = new HashMap<>();
-    private Map<String, String> inputEnvVars = new HashMap<>();
 
     private boolean isRedeploy;
 
@@ -84,8 +83,7 @@ public class DeploymentContext {
         }
     }
 
-    public static DeploymentContext fromProject(Project project, byte[] artifactData, Map<String, String> inputEnvVars,
-            boolean isRedeploy) {
+    public static DeploymentContext fromProject(Project project, byte[] artifactData, boolean isRedeploy) {
         DeploymentContext ctx = new DeploymentContext();
         ctx.setProjectSlug(project.getSlug());
         ctx.setArtifactData(artifactData);
@@ -111,9 +109,6 @@ public class DeploymentContext {
 
         if (project.getEnvVars() != null) {
             ctx.setExistingEnvVars(new HashMap<>(project.getEnvVars()));
-        }
-        if (inputEnvVars != null) {
-            ctx.setInputEnvVars(new HashMap<>(inputEnvVars));
         }
 
         ctx.setRedeploy(isRedeploy);

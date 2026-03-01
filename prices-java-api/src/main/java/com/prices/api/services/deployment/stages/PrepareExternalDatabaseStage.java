@@ -17,18 +17,18 @@ public class PrepareExternalDatabaseStage implements PipelineStage {
 
     private final String externalDbHost;
     private final int externalDbPort;
-    private final String deployerUser;
-    private final String deployerPassword;
+    private final String pricesUser;      // Shared user for all projects
+    private final String pricesPassword;  // Shared password for all projects
 
     public PrepareExternalDatabaseStage(
             String externalDbHost,
             int externalDbPort,
-            String deployerUser,
-            String deployerPassword) {
+            String pricesUser,
+            String pricesPassword) {
         this.externalDbHost = externalDbHost;
         this.externalDbPort = externalDbPort;
-        this.deployerUser = deployerUser;
-        this.deployerPassword = deployerPassword;
+        this.pricesUser = pricesUser;
+        this.pricesPassword = pricesPassword;
     }
 
     @Override
@@ -38,47 +38,32 @@ public class PrepareExternalDatabaseStage implements PipelineStage {
 
     @Override
     public void execute(DeploymentContext ctx) throws Exception {
-        // Skip if redeploy - DB already exists from previous successful deployment
-        if (ctx.isRedeploy()) {
-            ctx.addLog("Redeploy detected, skipping database setup (using existing credentials)");
-            return;
-        }
-
         String slug = ctx.getProjectSlug();
         String dbName = NamingUtils.dbName(slug);
-        String dbUser = NamingUtils.dbUser(slug);
+
+        // Always set DB context (deterministic: shared user + slug_db)
+        ctx.setDbHost(externalDbHost);
+        ctx.setDbPort(externalDbPort);
+        ctx.setDbName(dbName);
+        ctx.setDbUsername(pricesUser);
+        ctx.setDbPassword(pricesPassword);
 
         ctx.addLog(String.format("Connecting to external PostgreSQL at %s:%d", externalDbHost, externalDbPort));
 
         String jdbcUrl = String.format("jdbc:postgresql://%s:%d/postgres", externalDbHost, externalDbPort);
 
-        try (Connection conn = DriverManager.getConnection(jdbcUrl, deployerUser, deployerPassword)) {
-            ctx.addLog("Connected to PostgreSQL as deployment service");
+        try (Connection conn = DriverManager.getConnection(jdbcUrl, pricesUser, pricesPassword)) {
+            ctx.addLog("Connected to PostgreSQL as prices user");
 
-            // Check if database already exists - if so, skip entirely (use existing env vars)
+            // Check if database already exists
             if (databaseExists(conn, dbName)) {
-                ctx.addLog(String.format("Database '%s' already exists, using existing credentials", dbName));
+                ctx.addLog(String.format("Database '%s' already exists", dbName));
                 return;
             }
 
-            // First deployment - create DB, user, and set credentials
-            String dbPassword = NamingUtils.generateSecurePassword(16);
-
+            // Create database (no user creation - using shared prices user)
             createDatabase(conn, dbName);
             ctx.addLog(String.format("Created database: %s", dbName));
-
-            createUser(conn, dbUser, dbPassword);
-            ctx.addLog(String.format("Created user: %s", dbUser));
-
-            grantPrivileges(conn, dbName, dbUser);
-            ctx.addLog(String.format("Granted privileges on database '%s' to user '%s'", dbName, dbUser));
-
-            // Store in context for first deployment
-            ctx.setDbHost(externalDbHost);
-            ctx.setDbPort(externalDbPort);
-            ctx.setDbName(dbName);
-            ctx.setDbUsername(dbUser);
-            ctx.setDbPassword(dbPassword);
 
             ctx.addLog("External database setup completed successfully");
 
@@ -90,13 +75,13 @@ public class PrepareExternalDatabaseStage implements PipelineStage {
 
     @Override
     public void rollback(DeploymentContext ctx) {
-        // Never drop DB on redeploy - it contains user data from previous deployments
+        // Never drop DB on redeploy - it contains user data
         if (ctx.isRedeploy()) {
             ctx.addLog("Redeploy detected, skipping database rollback (preserving existing data)");
             return;
         }
 
-        if (ctx.getDbName() == null || ctx.getDbUsername() == null) {
+        if (ctx.getDbName() == null) {
             ctx.addLog("No database to rollback");
             return;
         }
@@ -104,15 +89,9 @@ public class PrepareExternalDatabaseStage implements PipelineStage {
         ctx.addLog("Rolling back database setup (first deployment failed)...");
         String jdbcUrl = String.format("jdbc:postgresql://%s:%d/postgres", externalDbHost, externalDbPort);
 
-        try (Connection conn = DriverManager.getConnection(jdbcUrl, deployerUser, deployerPassword)) {
-            // Drop database
+        try (Connection conn = DriverManager.getConnection(jdbcUrl, pricesUser, pricesPassword)) {
             dropDatabase(conn, ctx.getDbName());
             ctx.addLog(String.format("Dropped database: %s", ctx.getDbName()));
-
-            // Drop user
-            dropUser(conn, ctx.getDbUsername());
-            ctx.addLog(String.format("Dropped user: %s", ctx.getDbUsername()));
-
         } catch (SQLException e) {
             ctx.addLog(String.format("Rollback failed: %s", e.getMessage()));
             log.error("Failed to rollback database for project: {}", ctx.getProjectSlug(), e);
@@ -129,39 +108,8 @@ public class PrepareExternalDatabaseStage implements PipelineStage {
         }
     }
 
-    private boolean userExists(Connection conn, String username) throws SQLException {
-        String query = "SELECT 1 FROM pg_roles WHERE rolname = ?";
-        try (PreparedStatement stmt = conn.prepareStatement(query)) {
-            stmt.setString(1, username);
-            try (ResultSet rs = stmt.executeQuery()) {
-                return rs.next();
-            }
-        }
-    }
-
     private void createDatabase(Connection conn, String dbName) throws SQLException {
         String sql = String.format("CREATE DATABASE \"%s\"", dbName);
-        try (Statement stmt = conn.createStatement()) {
-            stmt.execute(sql);
-        }
-    }
-
-    private void createUser(Connection conn, String username, String password) throws SQLException {
-        String sql = String.format("CREATE USER \"%s\" WITH PASSWORD '%s'", username, password.replace("'", "''"));
-        try (Statement stmt = conn.createStatement()) {
-            stmt.execute(sql);
-        }
-    }
-
-    private void alterUserPassword(Connection conn, String username, String password) throws SQLException {
-        String sql = String.format("ALTER USER \"%s\" WITH PASSWORD '%s'", username, password.replace("'", "''"));
-        try (Statement stmt = conn.createStatement()) {
-            stmt.execute(sql);
-        }
-    }
-
-    private void grantPrivileges(Connection conn, String dbName, String username) throws SQLException {
-        String sql = String.format("GRANT ALL PRIVILEGES ON DATABASE \"%s\" TO \"%s\"", dbName, username);
         try (Statement stmt = conn.createStatement()) {
             stmt.execute(sql);
         }
@@ -183,13 +131,6 @@ public class PrepareExternalDatabaseStage implements PipelineStage {
         String dropSql = String.format("DROP DATABASE IF EXISTS \"%s\"", dbName);
         try (Statement stmt = conn.createStatement()) {
             stmt.execute(dropSql);
-        }
-    }
-
-    private void dropUser(Connection conn, String username) throws SQLException {
-        String sql = String.format("DROP USER IF EXISTS \"%s\"", username);
-        try (Statement stmt = conn.createStatement()) {
-            stmt.execute(sql);
         }
     }
 }

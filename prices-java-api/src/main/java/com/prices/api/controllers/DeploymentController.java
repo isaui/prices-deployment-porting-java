@@ -35,10 +35,9 @@ public class DeploymentController {
             Principal principal,
             @PathVariable Long id,
             @Part("artifact") CompletedFileUpload artifact,
-            @Part("version") @Nullable String version,
-            @Part("env_vars") @Nullable String envVars) {
+            @Part("version") @Nullable String version) {
         Long userId = Long.parseLong(principal.getName());
-        return handler.deploy(id, userId, artifact, version, envVars);
+        return handler.deploy(id, userId, artifact, version);
     }
 
     @Get("/api/projects/{id}/deployments")

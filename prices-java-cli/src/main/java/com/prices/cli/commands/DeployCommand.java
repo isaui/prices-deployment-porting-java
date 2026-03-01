@@ -16,7 +16,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.List;
 import java.util.concurrent.Callable;
 
 @Command(name = "deploy", description = "Deploy a project to the Prices platform")
@@ -39,9 +39,6 @@ public class DeployCommand implements Callable<Integer> {
 
     @Option(names = {"--version"}, description = "Deployment version", defaultValue = "1.0.0")
     private String version;
-
-    @Option(names = {"-e", "--env"}, description = "Environment variables (KEY=VALUE)")
-    private Map<String, String> envVars;
 
     private Client client;
 
@@ -89,10 +86,7 @@ public class DeployCommand implements Callable<Integer> {
             return 1; // Aborted
         }
 
-        // 4. Handle Env Vars
-        handleEnvVars(targetSlug);
-
-        // 5. Create Archive
+        // 4. Create Archive
         System.out.println("Preparing files...");
         Path archivePath = ZipUtil.createProjectArchive(absPath);
         long fileSizeBytes = Files.size(archivePath);
@@ -100,7 +94,7 @@ public class DeployCommand implements Callable<Integer> {
         System.out.printf("Archive created: %s%n", fileSize);
         
         try {
-            // 6. Deploy with progress
+            // Deploy with progress
             System.out.print("Uploading: 0.00 MB / " + fileSize + " (0%)");
             String deploymentId = client.deploy(targetSlug, archivePath, version, (uploaded, total) -> {
                 double uploadedMB = uploaded / (1024.0 * 1024.0);
@@ -110,7 +104,7 @@ public class DeployCommand implements Callable<Integer> {
             });
             System.out.println(); // New line after progress
             
-            // 7. Stream deployment logs (blocks until deployment finishes)
+            // Stream deployment logs (blocks until deployment finishes)
             System.out.println("Deploying...");
             try {
                 client.streamDeploymentLogs(deploymentId, System.out::println);
@@ -120,7 +114,7 @@ public class DeployCommand implements Callable<Integer> {
                 }
             }
             
-            // 8. Get final status (stream already waited for completion)
+            // Get final status (stream already waited for completion)
             Deployment dep = client.getDeploymentStatus(deploymentId);
             
             if ("success".equalsIgnoreCase(dep.getStatus())) {
@@ -223,55 +217,6 @@ public class DeployCommand implements Callable<Integer> {
         } catch (NumberFormatException e) {
             System.err.println("Invalid selection");
             return null;
-        }
-    }
-
-    private void handleEnvVars(String slug) throws Exception {
-        Map<String, String> existing = client.getEnvVars(slug);
-        if (existing == null) {
-            existing = new HashMap<>();
-        }
-        
-        if (!existing.isEmpty()) {
-            System.out.println("\nCurrent environment variables:");
-            existing.forEach((k, v) -> {
-                String masked = v.length() > 8 ? v.substring(0, 4) + "****" + v.substring(v.length() - 4) : "****";
-                System.out.printf("  %s = %s%n", k, masked);
-            });
-            System.out.println("\nYou can add/update env vars below (existing vars will be preserved)");
-        } else {
-            System.out.println("\nNo environment variables set yet.");
-            System.out.println("System will auto-provision required env vars on first successful deploy.");
-        }
-
-        Map<String, String> updates = new HashMap<>();
-        
-        // From flags
-        if (envVars != null) {
-            updates.putAll(envVars);
-            envVars.forEach((k, v) -> System.out.printf("  + %s = %s (from flag)%n", k, v));
-        }
-
-        // Interactive
-        if (!skipConfirm) {
-            while (true) {
-                System.out.print("\nAdd environment variable? (KEY=VALUE or press Enter to skip): ");
-                String line = System.console().readLine().trim();
-                if (line.isEmpty()) break;
-                
-                String[] parts = line.split("=", 2);
-                if (parts.length != 2) {
-                    System.out.println("Invalid format. Use KEY=VALUE");
-                    continue;
-                }
-                updates.put(parts[0], parts[1]);
-                System.out.printf("  + %s = %s%n", parts[0], parts[1]);
-            }
-        }
-
-        if (!updates.isEmpty()) {
-            client.updateEnvVars(slug, updates);
-            System.out.println("✓ Custom environment variables added");
         }
     }
 

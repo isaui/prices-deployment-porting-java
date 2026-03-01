@@ -23,46 +23,31 @@ public class EnvStage implements PipelineStage {
     public void execute(DeploymentContext ctx) throws Exception {
         Map<String, String> finalEnvVars = ctx.getFinalEnvVars();
 
-        if (ctx.isRedeploy()) {
-            // Redeploy: start with existing env vars, only merge input overrides
-            if (ctx.getExistingEnvVars() != null && !ctx.getExistingEnvVars().isEmpty()) {
-                finalEnvVars.putAll(ctx.getExistingEnvVars());
-                ctx.addLog(String.format("Redeploy: loaded %d existing env vars", ctx.getExistingEnvVars().size()));
-            }
+        // 1. Generate system env vars (auto-provisioned, not saved to DB)
+        Map<String, String> systemEnvVars = getSystemEnvVars(ctx);
+        finalEnvVars.putAll(systemEnvVars);
+        
+        // Log only keys for system env vars (values contain sensitive credentials)
+        List<String> systemKeys = new ArrayList<>(systemEnvVars.keySet());
+        Collections.sort(systemKeys);
+        ctx.addLog(String.format("Auto-provisioned %d system env vars: %s", systemEnvVars.size(), String.join(", ", systemKeys)));
 
-            if (ctx.getInputEnvVars() != null && !ctx.getInputEnvVars().isEmpty()) {
-                finalEnvVars.putAll(ctx.getInputEnvVars());
-                ctx.addLog(String.format("Merged %d input env vars", ctx.getInputEnvVars().size()));
-            }
-        } else {
-            // First deploy: generate defaults, then merge existing and input
-            Map<String, String> defaults = getDefaultEnvVars(ctx);
-            finalEnvVars.putAll(defaults);
-            ctx.addLog(String.format("Applied %d default env vars", defaults.size()));
-
-            if (ctx.getExistingEnvVars() != null && !ctx.getExistingEnvVars().isEmpty()) {
-                finalEnvVars.putAll(ctx.getExistingEnvVars());
-                ctx.addLog(String.format("Merged %d existing env vars", ctx.getExistingEnvVars().size()));
-            }
-
-            if (ctx.getInputEnvVars() != null && !ctx.getInputEnvVars().isEmpty()) {
-                finalEnvVars.putAll(ctx.getInputEnvVars());
-                ctx.addLog(String.format("Merged %d input env vars", ctx.getInputEnvVars().size()));
+        // 2. Merge user env vars (from DB, user can override system vars if needed)
+        if (ctx.getExistingEnvVars() != null && !ctx.getExistingEnvVars().isEmpty()) {
+            finalEnvVars.putAll(ctx.getExistingEnvVars());
+            ctx.addLog(String.format("Merged %d user env vars", ctx.getExistingEnvVars().size()));
+            
+            // Log user env vars with masking
+            List<String> userKeys = new ArrayList<>(ctx.getExistingEnvVars().keySet());
+            Collections.sort(userKeys);
+            for (String k : userKeys) {
+                String v = ctx.getExistingEnvVars().get(k);
+                String masked = maskValue(k, v);
+                ctx.addLog(String.format("  %s=%s", k, masked));
             }
         }
 
-        // Log summary
-        ctx.addLog(String.format("Final env vars: %d", finalEnvVars.size()));
-
-        // Log each env var (sorted for readability)
-        List<String> keys = new ArrayList<>(finalEnvVars.keySet());
-        Collections.sort(keys);
-
-        for (String k : keys) {
-            String v = finalEnvVars.get(k);
-            String masked = maskValue(k, v);
-            ctx.addLog(String.format("  %s=%s", k, masked));
-        }
+        ctx.addLog(String.format("Final env vars total: %d", finalEnvVars.size()));
     }
 
     @Override
@@ -70,7 +55,7 @@ public class EnvStage implements PipelineStage {
         ctx.addLog("Nothing to rollback for env stage");
     }
 
-    private Map<String, String> getDefaultEnvVars(DeploymentContext ctx) {
+    private Map<String, String> getSystemEnvVars(DeploymentContext ctx) {
         String slug = ctx.getProjectSlug();
 
         // Backend config - use external DB credentials from context

@@ -14,6 +14,11 @@ services:
       - DB_NAME=${DB_NAME:-prices_deployment}
       - JWT_SECRET=${JWT_SECRET:-your-secret-key-here}
       - PRICES_DOMAIN=${PRICES_DOMAIN:-skripsi.isacitra.com}
+      - PRICES_PROTOCOL=${PRICES_PROTOCOL:-https}
+      - PRICES_EXTERNAL_DB_HOST=${PRICES_EXTERNAL_DB_HOST:-10.119.106.82}
+      - PRICES_EXTERNAL_DB_PORT=${PRICES_EXTERNAL_DB_PORT:-5432}
+      - PRICES_EXTERNAL_DB_USER=${PRICES_EXTERNAL_DB_USER:-deployment}
+      - PRICES_EXTERNAL_DB_PASSWORD=${PRICES_EXTERNAL_DB_PASSWORD:-deployment123}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./docker-vol/deployments:/var/prices/deployments

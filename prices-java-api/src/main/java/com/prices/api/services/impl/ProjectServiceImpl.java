@@ -200,8 +200,8 @@ public class ProjectServiceImpl implements ProjectService {
                     detectDockerComposeCmd(),
                     databaseConfig.getHost(),
                     databaseConfig.getPort(),
-                    databaseConfig.getDeployerUser(),
-                    databaseConfig.getDeployerPassword()
+                    databaseConfig.getPricesUser(),
+                    databaseConfig.getPricesPassword()
             ).execute(ctx);
 
         } catch (Exception e) {

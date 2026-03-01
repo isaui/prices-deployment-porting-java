@@ -110,8 +110,7 @@ public class DeploymentServiceImpl implements DeploymentService {
                 .findFirstByProjectIdAndStatusOrderByCreatedAtDesc(project.getId(), DeploymentStatus.SUCCESS)
                 .isPresent();
 
-        DeploymentContext ctx = DeploymentContext.fromProject(project, req.getArtifactData(), req.getInputEnvVars(),
-                isRedeploy);
+        DeploymentContext ctx = DeploymentContext.fromProject(project, req.getArtifactData(), isRedeploy);
 
         // Hook logs to sink
         ctx.setLogListener(msg -> {
@@ -123,8 +122,8 @@ public class DeploymentServiceImpl implements DeploymentService {
                 new PrepareExternalDatabaseStage(
                         databaseConfig.getHost(),
                         databaseConfig.getPort(),
-                        databaseConfig.getDeployerUser(),
-                        databaseConfig.getDeployerPassword()
+                        databaseConfig.getPricesUser(),
+                        databaseConfig.getPricesPassword()
                 ),
                 new EnvStage(),
                 new PrepareDistStage(),
@@ -139,11 +138,8 @@ public class DeploymentServiceImpl implements DeploymentService {
             // Success
             updateDeploymentStatus(dep, DeploymentStatus.SUCCESS, String.join("\n", ctx.getLogs()));
 
-            // Update project status and env vars
+            // Update project status
             project.setStatus("active");
-            if (ctx.getFinalEnvVars() != null) {
-                project.setEnvVars(ctx.getFinalEnvVars());
-            }
             projectRepo.update(project);
 
         } catch (Exception e) {

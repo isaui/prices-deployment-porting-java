@@ -49,17 +49,17 @@ public class DatabaseStartup implements ApplicationEventListener<StartupEvent> {
                 databaseConfig.getHost(), databaseConfig.getPort());
 
         try (Connection conn = DriverManager.getConnection(jdbcUrl, 
-                databaseConfig.getDeployerUser(), databaseConfig.getDeployerPassword())) {
+                databaseConfig.getPricesUser(), databaseConfig.getPricesPassword())) {
             if (conn.isValid(5)) {
                 LOG.info("External database connected successfully (user: {})", 
-                        databaseConfig.getDeployerUser());
+                        databaseConfig.getPricesUser());
             }
         } catch (SQLException e) {
             LOG.error("Failed to connect to external database at {}:{} with user '{}': {}", 
                     databaseConfig.getHost(), databaseConfig.getPort(),
-                    databaseConfig.getDeployerUser(), e.getMessage());
+                    databaseConfig.getPricesUser(), e.getMessage());
             throw new RuntimeException("Failed to connect to external database. " +
-                    "Check DB_DEPLOYER_HOST, DB_DEPLOYER_PORT, DB_DEPLOYER_USER, DB_DEPLOYER_PASSWORD", e);
+                    "Check PRICES_EXTERNAL_DB_HOST, PRICES_EXTERNAL_DB_PORT, PRICES_EXTERNAL_DB_USER, PRICES_EXTERNAL_DB_PASSWORD", e);
         }
     }
 }

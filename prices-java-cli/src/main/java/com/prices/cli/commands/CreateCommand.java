@@ -37,7 +37,7 @@ public class CreateCommand implements Callable<Integer> {
     @Option(names = {"--monitoring"}, description = "Expose monitoring endpoint")
     private boolean exposeMonitoring;
 
-    @Option(names = {"--frontend-port"}, description = "Frontend listening port (default: 3000)")
+    @Option(names = {"--frontend-port"}, description = "Frontend listening port (default: 80)")
     private Integer frontendPort;
 
     @Option(names = {"--backend-port"}, description = "Backend listening port (default: 7776)")

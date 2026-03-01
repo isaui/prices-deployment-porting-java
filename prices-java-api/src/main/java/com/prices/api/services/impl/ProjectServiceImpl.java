@@ -209,7 +209,10 @@ public class ProjectServiceImpl implements ProjectService {
             // Continue with database deletion
         }
 
-        // 3. Delete from database
+        // 3. Delete deployment histories first (FK constraint)
+        deploymentRepo.deleteByProjectId(id);
+        
+        // 4. Delete project from database
         projectRepo.deleteById(id);
     }
 

@@ -52,8 +52,8 @@ public class Project {
     private boolean needMonitoringExposed = false;
 
     // Listening ports (for Traefik routing)
-    @Column(columnDefinition = "integer default 3000")
-    private Integer frontendListeningPort = 3000;
+    @Column(columnDefinition = "integer default 80")
+    private Integer frontendListeningPort = 80;
 
     @Column(columnDefinition = "integer default 7776")
     private Integer backendListeningPort = 7776;

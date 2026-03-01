@@ -91,7 +91,7 @@ public class ProjectCommand implements Callable<Integer> {
             System.out.println();
             
             System.out.println("Internal Ports:");
-            System.out.println("  Frontend: " + (project.getFrontendListeningPort() != null ? project.getFrontendListeningPort() : "3000 (default)"));
+            System.out.println("  Frontend: " + (project.getFrontendListeningPort() != null ? project.getFrontendListeningPort() : "80 (default)"));
             System.out.println("  Backend:  " + (project.getBackendListeningPort() != null ? project.getBackendListeningPort() : "7776 (default)"));
             
             return 0;

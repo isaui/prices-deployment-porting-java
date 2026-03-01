@@ -27,6 +27,8 @@ public interface DeploymentHistoryRepository extends CrudRepository<DeploymentHi
 
     Optional<DeploymentHistory> findFirstByProjectIdAndStatusOrderByCreatedAtDesc(Long projectId, DeploymentStatus status);
 
+    void deleteByProjectId(Long projectId);
+
     @Join(value = "project", type = Join.Type.LEFT_FETCH)
     @Join(value = "user", type = Join.Type.LEFT_FETCH)
     List<DeploymentHistory> findAllOrderByCreatedAtDesc();

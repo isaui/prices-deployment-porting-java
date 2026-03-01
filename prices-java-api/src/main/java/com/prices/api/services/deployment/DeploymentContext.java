@@ -41,7 +41,7 @@ public class DeploymentContext {
     private boolean needMonitoringExposed;
 
     // Listening ports (for Traefik routing)
-    private int frontendListeningPort = 3000;
+    private int frontendListeningPort = 80;
     private int backendListeningPort = 7776;
 
     // Env vars (user-configured, from DB)
@@ -104,7 +104,7 @@ public class DeploymentContext {
         ctx.setCustomMonitoringActive(project.isCustomMonitoringActive());
         ctx.setNeedMonitoringExposed(project.isNeedMonitoringExposed());
 
-        ctx.setFrontendListeningPort(project.getFrontendListeningPort() != null ? project.getFrontendListeningPort() : 3000);
+        ctx.setFrontendListeningPort(project.getFrontendListeningPort() != null ? project.getFrontendListeningPort() : 80);
         ctx.setBackendListeningPort(project.getBackendListeningPort() != null ? project.getBackendListeningPort() : 7776);
 
         if (project.getEnvVars() != null) {

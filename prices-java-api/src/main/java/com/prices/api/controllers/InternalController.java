@@ -16,8 +16,6 @@ import io.micronaut.http.MediaType;
 import io.micronaut.http.annotation.*;
 import io.micronaut.http.multipart.CompletedFileUpload;
 import io.micronaut.http.sse.Event;
-import io.micronaut.scheduling.TaskExecutors;
-import io.micronaut.scheduling.annotation.ExecuteOn;
 import io.micronaut.security.annotation.Secured;
 import io.micronaut.security.rules.SecurityRule;
 import lombok.RequiredArgsConstructor;
@@ -35,7 +33,6 @@ import java.util.Map;
 @Slf4j
 @Controller("/api/internal")
 @RequiredArgsConstructor
-@ExecuteOn(TaskExecutors.BLOCKING)
 @Secured(SecurityRule.IS_ANONYMOUS)  // Auth handled by InternalApiKeyFilter
 public class InternalController {
 

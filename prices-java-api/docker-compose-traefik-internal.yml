@@ -39,6 +39,8 @@ services:
     networks:
       - prices-network
       - prices-proxy-network
+    ports:
+      - "127.0.0.1:8090:8080"  # Internal API access for deploy.sh
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.api.rule=Host(`deploy.${PRICES_DOMAIN:-skripsi.isacitra.com}`)"

@@ -37,9 +37,15 @@ public class CustomTokenValidator implements TokenValidator {
                 // Create Micronaut Authentication object
                 // We use user.getId().toString() as the principal name (userId)
                 // This matches controllers: Long.parseLong(principal.getName())
+                Collection<String> roles = Collections.singletonList(user.getRole());
+                Map<String, Object> attributes = Map.of(
+                    "user", user,
+                    "role", user.getRole()
+                );
                 Authentication auth = Authentication.build(
                     String.valueOf(user.getId()),
-                    Collections.singletonMap("user", user) // Add user object to attributes if needed
+                    roles,
+                    attributes
                 );
                 
                 emitter.success(auth);

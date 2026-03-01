@@ -9,9 +9,16 @@ import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import com.prices.api.dto.responses.ErrorResponse;
+import com.prices.api.models.Project;
+import com.prices.api.services.ProjectService;
+import io.micronaut.http.HttpStatus;
+
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Map;
+
+import static com.prices.api.constants.Constants.ROLE_ADMIN;
 
 @Singleton
 @Slf4j
@@ -19,8 +26,18 @@ import java.util.Map;
 public class UploadHandler {
 
     private final UploadService uploadService;
+    private final ProjectService projectService;
 
-    public HttpResponse<?> initUpload(String projectSlug, String fileName, long totalSize, int totalChunks) {
+    public HttpResponse<?> initUpload(String projectSlug, String fileName, long totalSize, int totalChunks, Long userId, String role) {
+        try {
+            Project project = projectService.getBySlug(projectSlug);
+            if (!ROLE_ADMIN.equals(role) && !project.getUserId().equals(userId)) {
+                return HttpResponse.status(HttpStatus.FORBIDDEN).body(ErrorResponse.error("Access denied"));
+            }
+        } catch (Exception e) {
+            return HttpResponse.notFound(ApiResponse.error("Project not found"));
+        }
+        
         UploadSession session = uploadService.initUpload(projectSlug, fileName, totalSize, totalChunks);
         if (session == null) {
             return HttpResponse.serverError(ApiResponse.error("Failed to init upload"));
@@ -32,7 +49,16 @@ public class UploadHandler {
         )));
     }
 
-    public HttpResponse<?> uploadChunk(String projectSlug, int index, CompletedFileUpload chunk) {
+    public HttpResponse<?> uploadChunk(String projectSlug, int index, CompletedFileUpload chunk, Long userId, String role) {
+        try {
+            Project project = projectService.getBySlug(projectSlug);
+            if (!ROLE_ADMIN.equals(role) && !project.getUserId().equals(userId)) {
+                return HttpResponse.status(HttpStatus.FORBIDDEN).body(ErrorResponse.error("Access denied"));
+            }
+        } catch (Exception e) {
+            return HttpResponse.notFound(ApiResponse.error("Project not found"));
+        }
+        
         try {
             byte[] chunkData = chunk.getBytes();
             int uploaded = uploadService.uploadChunk(projectSlug, index, chunkData);
@@ -55,7 +81,16 @@ public class UploadHandler {
         }
     }
 
-    public HttpResponse<?> finalizeUpload(String projectSlug) {
+    public HttpResponse<?> finalizeUpload(String projectSlug, Long userId, String role) {
+        try {
+            Project project = projectService.getBySlug(projectSlug);
+            if (!ROLE_ADMIN.equals(role) && !project.getUserId().equals(userId)) {
+                return HttpResponse.status(HttpStatus.FORBIDDEN).body(ErrorResponse.error("Access denied"));
+            }
+        } catch (Exception e) {
+            return HttpResponse.notFound(ApiResponse.error("Project not found"));
+        }
+        
         try {
             Path finalPath = uploadService.finalizeUpload(projectSlug);
             UploadSession session = uploadService.getStatus(projectSlug);
@@ -73,7 +108,16 @@ public class UploadHandler {
         }
     }
 
-    public HttpResponse<?> getStatus(String projectSlug) {
+    public HttpResponse<?> getStatus(String projectSlug, Long userId, String role) {
+        try {
+            Project project = projectService.getBySlug(projectSlug);
+            if (!ROLE_ADMIN.equals(role) && !project.getUserId().equals(userId)) {
+                return HttpResponse.status(HttpStatus.FORBIDDEN).body(ErrorResponse.error("Access denied"));
+            }
+        } catch (Exception e) {
+            return HttpResponse.notFound(ApiResponse.error("Project not found"));
+        }
+        
         UploadSession session = uploadService.getStatus(projectSlug);
         if (session == null) {
             return HttpResponse.notFound(ApiResponse.error("Upload session not found"));

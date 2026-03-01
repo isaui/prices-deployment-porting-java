@@ -31,6 +31,9 @@ micronaut:
         http-method: GET
         access:
           - isAuthenticated()
+      - pattern: /api/internal/**
+        access:
+          - isAnonymous()
     token:
       jwt:
         enabled: true
@@ -65,3 +68,11 @@ database:
     port: ${PRICES_EXTERNAL_DB_PORT:5432}
     prices-user: ${PRICES_EXTERNAL_DB_USER:deployment}
     prices-password: ${PRICES_EXTERNAL_DB_PASSWORD:deployment123}
+
+admin:
+  username: ${ADMIN_USERNAME}
+  email: ${ADMIN_EMAIL}
+  password: ${ADMIN_PASSWORD}
+
+internal:
+  api-key: ${INTERNAL_API_KEY}

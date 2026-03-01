@@ -12,10 +12,15 @@ import io.micronaut.http.multipart.CompletedFileUpload;
 import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 
+import com.prices.api.models.Project;
+import com.prices.api.services.ProjectService;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+
+import static com.prices.api.constants.Constants.ROLE_ADMIN;
 
 import io.micronaut.http.sse.Event;
 import org.reactivestreams.Publisher;
@@ -25,17 +30,32 @@ import org.reactivestreams.Publisher;
 public class DeploymentHandler {
 
     private final DeploymentService deploymentService;
+    private final ProjectService projectService;
 
-    public Publisher<Event<String>> getLogsStream(Long deploymentId) {
-        return deploymentService.getLogEvents(deploymentId);
+    public Publisher<Event<String>> getLogsStream(Long deploymentId, Long userId, String role) {
+        try {
+            DeploymentHistory deployment = deploymentService.getStatus(deploymentId);
+            Project project = projectService.getById(deployment.getProjectId());
+            if (!ROLE_ADMIN.equals(role) && !project.getUserId().equals(userId)) {
+                return null; // Will result in empty stream
+            }
+            return deploymentService.getLogEvents(deploymentId);
+        } catch (Exception e) {
+            return null;
+        }
     }
 
-    public HttpResponse<?> deploy(Long projectId, Long userId, CompletedFileUpload artifact, String version) {
+    public HttpResponse<?> deploy(Long projectId, Long userId, String role, CompletedFileUpload artifact, String version) {
         if (artifact == null) {
             return HttpResponse.badRequest(ErrorResponse.error("Artifact file is required"));
         }
 
         try {
+            Project project = projectService.getById(projectId);
+            if (!ROLE_ADMIN.equals(role) && !project.getUserId().equals(userId)) {
+                return HttpResponse.status(HttpStatus.FORBIDDEN).body(ErrorResponse.error("Access denied"));
+            }
+            
             byte[] artifactData = artifact.getBytes();
             DeployRequest req = new DeployRequest();
             req.setProjectID(projectId);
@@ -53,8 +73,13 @@ public class DeploymentHandler {
         }
     }
 
-    public HttpResponse<?> getHistory(Long projectId) {
+    public HttpResponse<?> getHistory(Long projectId, Long userId, String role) {
         try {
+            Project project = projectService.getById(projectId);
+            if (!ROLE_ADMIN.equals(role) && !project.getUserId().equals(userId)) {
+                return HttpResponse.status(HttpStatus.FORBIDDEN).body(ErrorResponse.error("Access denied"));
+            }
+            
             List<DeploymentHistory> history = deploymentService.getHistory(projectId);
             return HttpResponse.ok(ApiResponse.success("Deployment history retrieved", MapperUtils.toDeploymentHistoryListResponse(history)));
         } catch (Exception e) {
@@ -62,9 +87,14 @@ public class DeploymentHandler {
         }
     }
 
-    public HttpResponse<?> getStatus(Long deploymentId) {
+    public HttpResponse<?> getStatus(Long deploymentId, Long userId, String role) {
         try {
             DeploymentHistory deployment = deploymentService.getStatus(deploymentId);
+            Project project = projectService.getById(deployment.getProjectId());
+            if (!ROLE_ADMIN.equals(role) && !project.getUserId().equals(userId)) {
+                return HttpResponse.status(HttpStatus.FORBIDDEN).body(ErrorResponse.error("Access denied"));
+            }
+            
             return HttpResponse.ok(ApiResponse.success("Deployment status retrieved",
                     MapperUtils.toDeploymentHistoryResponse(deployment)));
         } catch (Exception e) {
@@ -72,12 +102,17 @@ public class DeploymentHandler {
         }
     }
 
-    public HttpResponse<?> deployFromUpload(Long projectId, Long userId, Path artifactPath, String version) {
+    public HttpResponse<?> deployFromUpload(Long projectId, Long userId, String role, Path artifactPath, String version) {
         if (artifactPath == null || !Files.exists(artifactPath)) {
             return HttpResponse.badRequest(ErrorResponse.error("Artifact file not found"));
         }
 
         try {
+            Project project = projectService.getById(projectId);
+            if (!ROLE_ADMIN.equals(role) && !project.getUserId().equals(userId)) {
+                return HttpResponse.status(HttpStatus.FORBIDDEN).body(ErrorResponse.error("Access denied"));
+            }
+            
             byte[] artifactData = Files.readAllBytes(artifactPath);
             DeployRequest req = new DeployRequest();
             req.setProjectID(projectId);

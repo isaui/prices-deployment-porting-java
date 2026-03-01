@@ -22,6 +22,10 @@ services:
       - PRICES_EXTERNAL_DB_PORT=${PRICES_EXTERNAL_DB_PORT:-5432}
       - PRICES_EXTERNAL_DB_USER=${PRICES_EXTERNAL_DB_USER:-deployment}
       - PRICES_EXTERNAL_DB_PASSWORD=${PRICES_EXTERNAL_DB_PASSWORD:-deployment123}
+      - ADMIN_USERNAME=${ADMIN_USERNAME}
+      - ADMIN_EMAIL=${ADMIN_EMAIL}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+      - INTERNAL_API_KEY=${INTERNAL_API_KEY}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./docker-vol/deployments:/var/prices/deployments

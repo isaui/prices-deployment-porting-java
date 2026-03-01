@@ -10,4 +10,8 @@ public class Constants {
     public static final String NGINX_CONFIG_DIR = "/var/prices/nginx/conf.d";
     
     public static final long UPLOAD_SESSION_EXPIRY_MS = 3600_000; // 1 hour
+    
+    public static final String INTERNAL_API_KEY_HEADER = "X-Internal-Api-Key";
+    
+    public static final String ROLE_ADMIN = "admin";
 }

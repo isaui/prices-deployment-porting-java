@@ -18,6 +18,8 @@ import reactor.core.publisher.Flux;
 import java.util.List;
 import java.util.Map;
 
+import static com.prices.api.constants.Constants.ROLE_ADMIN;
+
 @Singleton
 @RequiredArgsConstructor
 public class ProjectHandler {
@@ -37,9 +39,14 @@ public class ProjectHandler {
         }
     }
 
-    public HttpResponse<?> getAll() {
+    public HttpResponse<?> getAll(Long userId, String role) {
         try {
-            List<Project> projects = projectService.getAll();
+            List<Project> projects;
+            if (ROLE_ADMIN.equals(role)) {
+                projects = projectService.getAll();
+            } else {
+                projects = projectService.getByUserId(userId);
+            }
             return HttpResponse.ok(ApiResponse.success("Projects retrieved successfully", MapperUtils.toProjectListResponse(projects)));
         } catch (Exception e) {
             return HttpResponse.serverError(ErrorResponse.error("Failed to get projects"));
@@ -55,38 +62,52 @@ public class ProjectHandler {
         }
     }
 
-    public HttpResponse<?> getById(Long id) {
+    public HttpResponse<?> getById(Long id, Long userId, String role) {
         try {
             Project project = projectService.getById(id);
+            if (!ROLE_ADMIN.equals(role) && !project.getUserId().equals(userId)) {
+                return HttpResponse.status(HttpStatus.FORBIDDEN).body(ErrorResponse.error("Access denied"));
+            }
             return HttpResponse.ok(ApiResponse.success("Project retrieved successfully", MapperUtils.toProjectResponse(project)));
         } catch (Exception e) {
             return HttpResponse.notFound(ErrorResponse.error("Project not found"));
         }
     }
 
-    public HttpResponse<?> getBySlug(String slug) {
+    public HttpResponse<?> getBySlug(String slug, Long userId, String role) {
         if (slug == null || slug.isEmpty()) {
             return HttpResponse.badRequest(ErrorResponse.error("Slug is required"));
         }
         try {
             Project project = projectService.getBySlug(slug);
+            if (!ROLE_ADMIN.equals(role) && !project.getUserId().equals(userId)) {
+                return HttpResponse.status(HttpStatus.FORBIDDEN).body(ErrorResponse.error("Access denied"));
+            }
             return HttpResponse.ok(ApiResponse.success("Project retrieved successfully", MapperUtils.toProjectResponse(project)));
         } catch (Exception e) {
             return HttpResponse.notFound(ErrorResponse.error("Project not found"));
         }
     }
 
-    public HttpResponse<?> update(Long id, UpdateProjectRequest req) {
+    public HttpResponse<?> update(Long id, UpdateProjectRequest req, Long userId, String role) {
         try {
-            Project project = projectService.update(id, req);
-            return HttpResponse.ok(ApiResponse.success("Project updated successfully", MapperUtils.toProjectResponse(project)));
+            Project project = projectService.getById(id);
+            if (!ROLE_ADMIN.equals(role) && !project.getUserId().equals(userId)) {
+                return HttpResponse.status(HttpStatus.FORBIDDEN).body(ErrorResponse.error("Access denied"));
+            }
+            Project updated = projectService.update(id, req);
+            return HttpResponse.ok(ApiResponse.success("Project updated successfully", MapperUtils.toProjectResponse(updated)));
         } catch (Exception e) {
             return HttpResponse.serverError(ErrorResponse.error("Failed to update project"));
         }
     }
 
-    public HttpResponse<?> delete(Long id) {
+    public HttpResponse<?> delete(Long id, Long userId, String role) {
         try {
+            Project project = projectService.getById(id);
+            if (!ROLE_ADMIN.equals(role) && !project.getUserId().equals(userId)) {
+                return HttpResponse.status(HttpStatus.FORBIDDEN).body(ErrorResponse.error("Access denied"));
+            }
             projectService.delete(id);
             return HttpResponse.ok(ApiResponse.success("Project deleted successfully", null));
         } catch (Exception e) {
@@ -94,8 +115,12 @@ public class ProjectHandler {
         }
     }
 
-    public HttpResponse<?> getEnvVars(Long id) {
+    public HttpResponse<?> getEnvVars(Long id, Long userId, String role) {
         try {
+            Project project = projectService.getById(id);
+            if (!ROLE_ADMIN.equals(role) && !project.getUserId().equals(userId)) {
+                return HttpResponse.status(HttpStatus.FORBIDDEN).body(ErrorResponse.error("Access denied"));
+            }
             Map<String, String> envVars = projectService.getEnvVars(id);
             return HttpResponse.ok(ApiResponse.success("Project env vars retrieved", new ProjectEnvVarsResponse(id, envVars)));
         } catch (Exception e) {
@@ -103,11 +128,15 @@ public class ProjectHandler {
         }
     }
 
-    public HttpResponse<?> replaceEnvVars(Long id, UpdateEnvVarsRequest req) {
+    public HttpResponse<?> replaceEnvVars(Long id, UpdateEnvVarsRequest req, Long userId, String role) {
         if (req.getEnvVars() == null) {
             return HttpResponse.badRequest(ErrorResponse.error("env_vars is required"));
         }
         try {
+            Project project = projectService.getById(id);
+            if (!ROLE_ADMIN.equals(role) && !project.getUserId().equals(userId)) {
+                return HttpResponse.status(HttpStatus.FORBIDDEN).body(ErrorResponse.error("Access denied"));
+            }
             projectService.updateEnvVars(id, req.getEnvVars());
             Map<String, String> envVars = projectService.getEnvVars(id);
             return HttpResponse.ok(ApiResponse.success("Project env vars replaced", new ProjectEnvVarsResponse(id, envVars)));
@@ -116,11 +145,15 @@ public class ProjectHandler {
         }
     }
 
-    public HttpResponse<?> upsertEnvVars(Long id, UpdateEnvVarsRequest req) {
+    public HttpResponse<?> upsertEnvVars(Long id, UpdateEnvVarsRequest req, Long userId, String role) {
         if (req.getEnvVars() == null) {
             return HttpResponse.badRequest(ErrorResponse.error("env_vars is required"));
         }
         try {
+            Project project = projectService.getById(id);
+            if (!ROLE_ADMIN.equals(role) && !project.getUserId().equals(userId)) {
+                return HttpResponse.status(HttpStatus.FORBIDDEN).body(ErrorResponse.error("Access denied"));
+            }
             projectService.upsertEnvVars(id, req.getEnvVars());
             Map<String, String> envVars = projectService.getEnvVars(id);
             return HttpResponse.ok(ApiResponse.success("Project env vars updated", new ProjectEnvVarsResponse(id, envVars)));
@@ -151,8 +184,12 @@ public class ProjectHandler {
         return HttpResponse.ok(ApiResponse.success("Auto-provisioned environment variables", data));
     }
     
-    public HttpResponse<?> getLogs(Long id, int lines) {
+    public HttpResponse<?> getLogs(Long id, int lines, Long userId, String role) {
         try {
+            Project project = projectService.getById(id);
+            if (!ROLE_ADMIN.equals(role) && !project.getUserId().equals(userId)) {
+                return HttpResponse.status(HttpStatus.FORBIDDEN).body(ErrorResponse.error("Access denied"));
+            }
             String logs = projectService.getLogs(id, lines);
             return HttpResponse.ok(ApiResponse.success("Logs retrieved", new LogsResponse(logs, lines)));
         } catch (Exception e) {
@@ -160,7 +197,15 @@ public class ProjectHandler {
         }
     }
     
-    public Flux<String> streamLogs(Long id) {
-        return projectService.streamLogs(id);
+    public Flux<String> streamLogs(Long id, Long userId, String role) {
+        try {
+            Project project = projectService.getById(id);
+            if (!ROLE_ADMIN.equals(role) && !project.getUserId().equals(userId)) {
+                return Flux.error(new SecurityException("Access denied"));
+            }
+            return projectService.streamLogs(id);
+        } catch (Exception e) {
+            return Flux.error(e);
+        }
     }
 }

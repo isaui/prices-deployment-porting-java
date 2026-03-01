@@ -18,7 +18,8 @@ import lombok.Data;
 import lombok.RequiredArgsConstructor;
 
 import java.nio.file.Path;
-import java.security.Principal;
+
+import io.micronaut.security.authentication.Authentication;
 
 import io.micronaut.http.sse.Event;
 import org.reactivestreams.Publisher;
@@ -33,28 +34,35 @@ public class DeploymentController {
     private final UploadHandler uploadHandler;
 
     @Get(value = "/api/deployments/{id}/stream", produces = MediaType.TEXT_EVENT_STREAM)
-    public Publisher<Event<String>> getLogs(@PathVariable Long id) {
-        return handler.getLogsStream(id);
+    public Publisher<Event<String>> getLogs(Authentication auth, @PathVariable Long id) {
+        Long userId = Long.parseLong(auth.getName());
+        String role = (String) auth.getAttributes().get("role");
+        return handler.getLogsStream(id, userId, role);
     }
 
     @Post(value = "/api/projects/{id}/deploy", consumes = MediaType.MULTIPART_FORM_DATA)
     public HttpResponse<?> deploy(
-            Principal principal,
+            Authentication auth,
             @PathVariable Long id,
             @Part("artifact") CompletedFileUpload artifact,
             @Part("version") @Nullable String version) {
-        Long userId = Long.parseLong(principal.getName());
-        return handler.deploy(id, userId, artifact, version);
+        Long userId = Long.parseLong(auth.getName());
+        String role = (String) auth.getAttributes().get("role");
+        return handler.deploy(id, userId, role, artifact, version);
     }
 
     @Get("/api/projects/{id}/deployments")
-    public HttpResponse<?> getHistory(@PathVariable Long id) {
-        return handler.getHistory(id);
+    public HttpResponse<?> getHistory(Authentication auth, @PathVariable Long id) {
+        Long userId = Long.parseLong(auth.getName());
+        String role = (String) auth.getAttributes().get("role");
+        return handler.getHistory(id, userId, role);
     }
 
     @Get("/api/deployments/{id}")
-    public HttpResponse<?> getStatus(@PathVariable Long id) {
-        return handler.getStatus(id);
+    public HttpResponse<?> getStatus(Authentication auth, @PathVariable Long id) {
+        Long userId = Long.parseLong(auth.getName());
+        String role = (String) auth.getAttributes().get("role");
+        return handler.getStatus(id, userId, role);
     }
 
     /**
@@ -62,17 +70,18 @@ public class DeploymentController {
      */
     @Post("/api/projects/{id}/deploy-from-upload")
     public HttpResponse<?> deployFromUpload(
-            Principal principal,
+            Authentication auth,
             @PathVariable Long id,
             @Body DeployFromUploadRequest request) {
-        Long userId = Long.parseLong(principal.getName());
+        Long userId = Long.parseLong(auth.getName());
+        String role = (String) auth.getAttributes().get("role");
         
         Path artifactPath = uploadHandler.getFinalPath(request.getUploadId());
         if (artifactPath == null) {
             return HttpResponse.badRequest(ApiResponse.error("Upload not found or not finalized"));
         }
         
-        HttpResponse<?> response = handler.deployFromUpload(id, userId, artifactPath, request.getVersion());
+        HttpResponse<?> response = handler.deployFromUpload(id, userId, role, artifactPath, request.getVersion());
         
         // Cleanup upload after deployment starts
         uploadHandler.cleanupSession(request.getUploadId());

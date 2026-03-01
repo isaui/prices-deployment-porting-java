@@ -14,7 +14,9 @@ import io.micronaut.security.rules.SecurityRule;
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Flux;
 
-import java.security.Principal;
+import io.micronaut.security.authentication.Authentication;
+
+import static com.prices.api.constants.Constants.ROLE_ADMIN;
 
 @Controller("/api/projects")
 @RequiredArgsConstructor
@@ -25,40 +27,50 @@ public class ProjectController {
     private final ProjectHandler handler;
 
     @Post
-    public HttpResponse<?> create(Principal principal, @Body CreateProjectRequest req) {
-        Long userId = Long.parseLong(principal.getName());
+    public HttpResponse<?> create(Authentication auth, @Body CreateProjectRequest req) {
+        Long userId = Long.parseLong(auth.getName());
         return handler.create(userId, req);
     }
 
     @Get
-    public HttpResponse<?> getAll() {
-        return handler.getAll();
+    public HttpResponse<?> getAll(Authentication auth) {
+        Long userId = Long.parseLong(auth.getName());
+        String role = (String) auth.getAttributes().get("role");
+        return handler.getAll(userId, role);
     }
 
     @Get("/me")
-    public HttpResponse<?> getProjectByMe(Principal principal) {
-        Long userId = Long.parseLong(principal.getName());
+    public HttpResponse<?> getProjectByMe(Authentication auth) {
+        Long userId = Long.parseLong(auth.getName());
         return handler.getByUserId(userId);
     }
 
     @Get("/{id}")
-    public HttpResponse<?> getById(@PathVariable Long id) {
-        return handler.getById(id);
+    public HttpResponse<?> getById(Authentication auth, @PathVariable Long id) {
+        Long userId = Long.parseLong(auth.getName());
+        String role = (String) auth.getAttributes().get("role");
+        return handler.getById(id, userId, role);
     }
 
     @Get("/slug/{slug}")
-    public HttpResponse<?> getBySlug(@PathVariable String slug) {
-        return handler.getBySlug(slug);
+    public HttpResponse<?> getBySlug(Authentication auth, @PathVariable String slug) {
+        Long userId = Long.parseLong(auth.getName());
+        String role = (String) auth.getAttributes().get("role");
+        return handler.getBySlug(slug, userId, role);
     }
 
     @Put("/{id}")
-    public HttpResponse<?> update(@PathVariable Long id, @Body UpdateProjectRequest req) {
-        return handler.update(id, req);
+    public HttpResponse<?> update(Authentication auth, @PathVariable Long id, @Body UpdateProjectRequest req) {
+        Long userId = Long.parseLong(auth.getName());
+        String role = (String) auth.getAttributes().get("role");
+        return handler.update(id, req, userId, role);
     }
 
     @Delete("/{id}")
-    public HttpResponse<?> delete(@PathVariable Long id) {
-        return handler.delete(id);
+    public HttpResponse<?> delete(Authentication auth, @PathVariable Long id) {
+        Long userId = Long.parseLong(auth.getName());
+        String role = (String) auth.getAttributes().get("role");
+        return handler.delete(id, userId, role);
     }
     
     @Get("/env-vars/defaults")
@@ -67,27 +79,37 @@ public class ProjectController {
     }
 
     @Get("/{id}/env-vars")
-    public HttpResponse<?> getEnvVars(@PathVariable Long id) {
-        return handler.getEnvVars(id);
+    public HttpResponse<?> getEnvVars(Authentication auth, @PathVariable Long id) {
+        Long userId = Long.parseLong(auth.getName());
+        String role = (String) auth.getAttributes().get("role");
+        return handler.getEnvVars(id, userId, role);
     }
 
     @Put("/{id}/env-vars")
-    public HttpResponse<?> replaceEnvVars(@PathVariable Long id, @Body UpdateEnvVarsRequest req) {
-        return handler.replaceEnvVars(id, req);
+    public HttpResponse<?> replaceEnvVars(Authentication auth, @PathVariable Long id, @Body UpdateEnvVarsRequest req) {
+        Long userId = Long.parseLong(auth.getName());
+        String role = (String) auth.getAttributes().get("role");
+        return handler.replaceEnvVars(id, req, userId, role);
     }
 
     @Patch("/{id}/env-vars")
-    public HttpResponse<?> upsertEnvVars(@PathVariable Long id, @Body UpdateEnvVarsRequest req) {
-        return handler.upsertEnvVars(id, req);
+    public HttpResponse<?> upsertEnvVars(Authentication auth, @PathVariable Long id, @Body UpdateEnvVarsRequest req) {
+        Long userId = Long.parseLong(auth.getName());
+        String role = (String) auth.getAttributes().get("role");
+        return handler.upsertEnvVars(id, req, userId, role);
     }
 
     @Get("/{id}/logs")
-    public HttpResponse<?> getLogs(@PathVariable Long id, @QueryValue(defaultValue = "50") int lines) {
-        return handler.getLogs(id, lines);
+    public HttpResponse<?> getLogs(Authentication auth, @PathVariable Long id, @QueryValue(defaultValue = "50") int lines) {
+        Long userId = Long.parseLong(auth.getName());
+        String role = (String) auth.getAttributes().get("role");
+        return handler.getLogs(id, lines, userId, role);
     }
 
     @Get(value = "/{id}/logs/stream", produces = MediaType.TEXT_EVENT_STREAM)
-    public Flux<String> streamLogs(@PathVariable Long id) {
-        return handler.streamLogs(id);
+    public Flux<String> streamLogs(Authentication auth, @PathVariable Long id) {
+        Long userId = Long.parseLong(auth.getName());
+        String role = (String) auth.getAttributes().get("role");
+        return handler.streamLogs(id, userId, role);
     }
 }

@@ -6,9 +6,14 @@ import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 import picocli.CommandLine.ParentCommand;
 
+import com.pty4j.PtyProcess;
+import com.pty4j.PtyProcessBuilder;
+
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
@@ -129,7 +134,8 @@ public class DeploySshCommand implements Callable<Integer> {
     }
 
     private String buildDeployCommand(String remoteArtifact) {
-        StringBuilder cmd = new StringBuilder(REMOTE_DEPLOY_SCRIPT);
+        // Use stdbuf to disable output buffering for real-time streaming
+        StringBuilder cmd = new StringBuilder("stdbuf -oL -eL " + REMOTE_DEPLOY_SCRIPT);
         cmd.append(" --project-name ").append(quote(projectName));
         cmd.append(" --artifact ").append(remoteArtifact);
         if (frontendUrl != null) cmd.append(" --frontend-url ").append(quote(frontendUrl));
@@ -149,27 +155,75 @@ public class DeploySshCommand implements Callable<Integer> {
     }
 
     private int runScp(String localPath, String remotePath) throws Exception {
-        ProcessBuilder pb = new ProcessBuilder("scp", localPath, sshHost + ":" + remotePath);
-        pb.inheritIO();
-        return pb.start().waitFor();
+        String[] cmd = {"scp", "-o", "BatchMode=no", localPath, sshHost + ":" + remotePath};
+        return runInteractiveCommand(cmd);
     }
 
     private int runSsh(String remoteCmd, boolean showOutput) throws Exception {
-        ProcessBuilder pb = new ProcessBuilder("ssh", sshHost, remoteCmd);
-        if (showOutput) {
-            pb.redirectErrorStream(true);
-            Process p = pb.start();
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    System.out.println(line);
+        String[] cmd = {"ssh", "-o", "BatchMode=no", "-t", sshHost, remoteCmd};
+        return runInteractiveCommand(cmd);
+    }
+
+    /**
+     * Run command in a pseudo-terminal (PTY) for interactive prompts.
+     * SSH reads passphrase from /dev/tty, so we need a real PTY.
+     */
+    private int runInteractiveCommand(String[] cmd) throws Exception {
+        // Setup PTY environment
+        Map<String, String> env = new HashMap<>(System.getenv());
+        env.put("TERM", "xterm");
+        
+        // Create PTY process with console mode for Windows
+        PtyProcess pty = new PtyProcessBuilder(cmd)
+            .setEnvironment(env)
+            .setRedirectErrorStream(true)
+            .setConsole(true)  // Enable console mode
+            .setInitialColumns(120)
+            .setInitialRows(40)
+            .start();
+        
+        InputStream ptyOut = pty.getInputStream();
+        OutputStream ptyIn = pty.getOutputStream();
+        
+        // Forward PTY output to CLI stdout - read byte by byte for immediate output
+        Thread outputThread = new Thread(() -> {
+            try {
+                int b;
+                while ((b = ptyOut.read()) != -1) {
+                    System.out.write(b);
+                    System.out.flush();
                 }
+            } catch (IOException e) {
+                // PTY closed
             }
-            return p.waitFor();
-        } else {
-            pb.inheritIO();
-            return pb.start().waitFor();
-        }
+        });
+        outputThread.setDaemon(true);
+        outputThread.start();
+        
+        // Forward CLI stdin to PTY input - read byte by byte for immediate response
+        Thread inputThread = new Thread(() -> {
+            try {
+                int b;
+                while (pty.isAlive()) {
+                    if (System.in.available() > 0) {
+                        b = System.in.read();
+                        if (b == -1) break;
+                        ptyIn.write(b);
+                        ptyIn.flush();
+                    } else {
+                        Thread.sleep(10); // Small delay to avoid busy-waiting
+                    }
+                }
+            } catch (IOException | InterruptedException e) {
+                // PTY closed or stdin closed
+            }
+        });
+        inputThread.setDaemon(true);
+        inputThread.start();
+        
+        int exitCode = pty.waitFor();
+        outputThread.join(1000);
+        return exitCode;
     }
 
     private String formatFileSize(long bytes) {

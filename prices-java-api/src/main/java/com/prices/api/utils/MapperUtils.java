@@ -40,6 +40,9 @@ public class MapperUtils {
         resp.setCustomMonitoringActive(p.isCustomMonitoringActive());
         resp.setNeedMonitoringExposed(p.isNeedMonitoringExposed());
 
+        resp.setFrontendListeningPort(p.getFrontendListeningPort());
+        resp.setBackendListeningPort(p.getBackendListeningPort());
+
         resp.setUserId(p.getUserId());
         resp.setCreatedAt(p.getCreatedAt());
         resp.setUpdatedAt(p.getUpdatedAt());

@@ -32,6 +32,10 @@ public class ProjectResponse {
     private boolean isCustomMonitoringActive;
     private boolean needMonitoringExposed;
 
+    // Listening ports
+    private Integer frontendListeningPort;
+    private Integer backendListeningPort;
+
     private Long userId;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

@@ -11,6 +11,7 @@ import io.micronaut.scheduling.annotation.ExecuteOn;
 import io.micronaut.security.annotation.Secured;
 import io.micronaut.security.rules.SecurityRule;
 import io.micronaut.serde.annotation.Serdeable;
+import lombok.Data;
 import lombok.RequiredArgsConstructor;
 
 @Controller("/api/uploads")
@@ -23,7 +24,7 @@ public class UploadController {
 
     @Post("/init")
     public HttpResponse<?> initUpload(@Body InitUploadRequest request) {
-        return handler.initUpload(request.projectSlug, request.fileName, request.totalSize, request.totalChunks);
+        return handler.initUpload(request.getProjectSlug(), request.getFileName(), request.getTotalSize(), request.getTotalChunks());
     }
 
     @Post(value = "/{projectSlug}/chunk", consumes = MediaType.MULTIPART_FORM_DATA)
@@ -44,12 +45,13 @@ public class UploadController {
         return handler.getStatus(projectSlug);
     }
 
+    @Data
     @Introspected
     @Serdeable
     public static class InitUploadRequest {
-        public String projectSlug;
-        public String fileName;
-        public long totalSize;
-        public int totalChunks;
+        private String projectSlug;
+        private String fileName;
+        private long totalSize;
+        private int totalChunks;
     }
 }

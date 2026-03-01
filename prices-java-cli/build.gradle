@@ -8,7 +8,6 @@ version = '1.0-SNAPSHOT'
 
 repositories {
     mavenCentral()
-    maven { url 'https://packages.jetbrains.team/maven/p/ij/intellij-dependencies' }
 }
 
 dependencies {
@@ -19,9 +18,6 @@ dependencies {
     annotationProcessor 'org.projectlombok:lombok:1.18.30'
     
     implementation 'ch.qos.logback:logback-classic:1.4.14'
-    
-    // PTY for interactive SSH (passphrase prompts)
-    implementation 'org.jetbrains.pty4j:pty4j:0.12.13'
 }
 
 application {

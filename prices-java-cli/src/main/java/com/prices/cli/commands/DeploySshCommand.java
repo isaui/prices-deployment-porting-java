@@ -6,14 +6,9 @@ import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 import picocli.CommandLine.ParentCommand;
 
-import com.pty4j.PtyProcess;
-import com.pty4j.PtyProcessBuilder;
-
 import java.io.*;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
@@ -108,8 +103,8 @@ public class DeploySshCommand implements Callable<Integer> {
             }
 
             if (!dryRun) {
-                int result = runSsh(deployCmd, true);
-                runSsh("rm -f " + remoteArtifact, false);
+                int result = runSsh(deployCmd);
+                runSsh("rm -f " + remoteArtifact);
 
                 if (result == 0) {
                     System.out.println("\n✓ Deployment complete!");
@@ -155,77 +150,25 @@ public class DeploySshCommand implements Callable<Integer> {
     }
 
     private int runScp(String localPath, String remotePath) throws Exception {
-        String[] cmd = {"scp", "-o", "BatchMode=no", localPath, sshHost + ":" + remotePath};
-        return runInteractiveCommand(cmd, true);
+        String[] cmd = {"scp", localPath, sshHost + ":" + remotePath};
+        return runCommand(cmd);
     }
 
-    private int runSsh(String remoteCmd, boolean showOutput) throws Exception {
-        String[] cmd = {"ssh", "-o", "BatchMode=no", "-t", sshHost, remoteCmd};
-        return runInteractiveCommand(cmd, showOutput);
+    private int runSsh(String remoteCmd) throws Exception {
+        // Use -t for TTY allocation
+        String[] cmd = {"ssh", "-t", sshHost, remoteCmd};
+        return runCommand(cmd);
     }
 
     /**
-     * Run command in a pseudo-terminal (PTY) for interactive prompts.
-     * SSH reads passphrase from /dev/tty, so we need a real PTY.
+     * Run command with inheritIO - uses the real terminal for input/output.
+     * This allows SSH to properly handle passphrase prompts.
      */
-    private int runInteractiveCommand(String[] cmd, boolean showOutput) throws Exception {
-        // Setup PTY environment
-        Map<String, String> env = new HashMap<>(System.getenv());
-        env.put("TERM", "xterm");
-        
-        // Create PTY process with console mode for Windows
-        PtyProcess pty = new PtyProcessBuilder(cmd)
-            .setEnvironment(env)
-            .setRedirectErrorStream(true)
-            .setConsole(true)  // Enable console mode
-            .setInitialColumns(120)
-            .setInitialRows(40)
-            .start();
-        
-        InputStream ptyOut = pty.getInputStream();
-        OutputStream ptyIn = pty.getOutputStream();
-        
-        // Forward PTY output to CLI stdout - read byte by byte for immediate output
-        Thread outputThread = new Thread(() -> {
-            try {
-                int b;
-                while ((b = ptyOut.read()) != -1) {
-                    if (showOutput) {
-                        System.out.write(b);
-                        System.out.flush();
-                    }
-                }
-            } catch (IOException e) {
-                // PTY closed
-            }
-        });
-        outputThread.setDaemon(true);
-        outputThread.start();
-        
-        // Forward CLI stdin to PTY input - read byte by byte for immediate response
-        Thread inputThread = new Thread(() -> {
-            try {
-                int b;
-                while (pty.isAlive()) {
-                    if (System.in.available() > 0) {
-                        b = System.in.read();
-                        if (b == -1) break;
-                        ptyIn.write(b);
-                        ptyIn.flush();
-                    } else {
-                        Thread.sleep(10); // Small delay to avoid busy-waiting
-                    }
-                }
-            } catch (IOException | InterruptedException e) {
-                // PTY closed or stdin closed
-            }
-        });
-        inputThread.setDaemon(true);
-        inputThread.start();
-        
-        int exitCode = pty.waitFor();
-        outputThread.join(1000);
-        return exitCode;
+    private int runCommand(String[] cmd) throws Exception {
+        ProcessBuilder pb = new ProcessBuilder(cmd);
+        pb.inheritIO();  // Use parent process's stdin/stdout/stderr
+        Process process = pb.start();
+        return process.waitFor();
     }
 
     private String formatFileSize(long bytes) {

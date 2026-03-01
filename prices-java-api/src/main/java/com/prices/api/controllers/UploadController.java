@@ -3,12 +3,14 @@ package com.prices.api.controllers;
 import com.prices.api.handlers.UploadHandler;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.MediaType;
+import io.micronaut.core.annotation.Introspected;
 import io.micronaut.http.annotation.*;
 import io.micronaut.http.multipart.CompletedFileUpload;
 import io.micronaut.scheduling.TaskExecutors;
 import io.micronaut.scheduling.annotation.ExecuteOn;
 import io.micronaut.security.annotation.Secured;
 import io.micronaut.security.rules.SecurityRule;
+import io.micronaut.serde.annotation.Serdeable;
 import lombok.RequiredArgsConstructor;
 
 @Controller("/api/uploads")
@@ -42,6 +44,8 @@ public class UploadController {
         return handler.getStatus(projectSlug);
     }
 
+    @Introspected
+    @Serdeable
     public static class InitUploadRequest {
         public String projectSlug;
         public String fileName;

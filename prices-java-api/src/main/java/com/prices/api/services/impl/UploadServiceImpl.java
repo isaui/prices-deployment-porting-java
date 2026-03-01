@@ -10,12 +10,13 @@ import java.nio.file.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static com.prices.api.constants.Constants.*;
+
 @Singleton
 @Slf4j
 public class UploadServiceImpl implements UploadService {
 
-    private static final Path UPLOAD_DIR = Paths.get("/var/prices/uploads");
-    private static final long SESSION_EXPIRY_MS = 3600_000; // 1 hour
+    private static final Path UPLOAD_DIR = Paths.get(UPLOADS_DIR);
     
     private final Map<String, InternalSession> activeSessions = new ConcurrentHashMap<>();
 
@@ -156,7 +157,7 @@ public class UploadServiceImpl implements UploadService {
         
         for (Map.Entry<String, InternalSession> entry : activeSessions.entrySet()) {
             InternalSession session = entry.getValue();
-            if (now - session.createdAt > SESSION_EXPIRY_MS) {
+            if (now - session.createdAt > UPLOAD_SESSION_EXPIRY_MS) {
                 cleanupSession(entry.getKey());
                 cleaned++;
             }

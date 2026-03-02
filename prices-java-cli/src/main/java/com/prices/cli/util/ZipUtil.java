@@ -9,9 +9,13 @@ import java.util.zip.ZipOutputStream;
 
 public class ZipUtil {
 
-    private static final Set<String> EXCLUDED_DIRS = Set.of(
-            "node_modules", "target", "build", "dist", ".git", ".idea", ".vscode", ".prices"
+    // Always excluded - never needed in deployment
+    private static final Set<String> ALWAYS_EXCLUDED_DIRS = Set.of(
+            "node_modules", "target", ".git", ".idea", ".vscode", ".prices"
     );
+    
+    // Only excluded if parent has package.json (will be rebuilt)
+    private static final Set<String> BUILD_OUTPUT_DIRS = Set.of("build", "dist");
 
     public static Path createProjectArchive(Path sourceDir) throws IOException {
         Path zipPath = Files.createTempFile("prices-deploy-", ".zip");
@@ -26,13 +30,23 @@ public class ZipUtil {
                     
                     String dirName = dir.getFileName().toString();
                     
-                    // Skip hidden dirs (start with .) except .env.example if needed, but here we exclude hidden dirs generally
-                    if (dirName.startsWith(".") && !dirName.equals(".env.example")) {
+                    // Skip hidden dirs
+                    if (dirName.startsWith(".")) {
                         return FileVisitResult.SKIP_SUBTREE;
                     }
                     
-                    if (EXCLUDED_DIRS.contains(dirName)) {
+                    // Always skip these
+                    if (ALWAYS_EXCLUDED_DIRS.contains(dirName)) {
                         return FileVisitResult.SKIP_SUBTREE;
+                    }
+                    
+                    // Skip build/dist only if parent has package.json (will be rebuilt)
+                    if (BUILD_OUTPUT_DIRS.contains(dirName)) {
+                        Path parentPackageJson = dir.getParent().resolve("package.json");
+                        if (Files.exists(parentPackageJson)) {
+                            return FileVisitResult.SKIP_SUBTREE;
+                        }
+                        // No package.json = pre-built static site, include it
                     }
                     
                     return FileVisitResult.CONTINUE;

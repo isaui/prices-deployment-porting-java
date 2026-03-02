@@ -215,19 +215,23 @@ public class PrepareDistStage implements PipelineStage {
             sb.append("CMD [\"nginx\", \"-g\", \"daemon off;\"]\n");
             return sb.toString();
         } else {
-            return "FROM nginx:alpine\n" +
-                    "COPY . /usr/share/nginx/html\n" +
-                    "EXPOSE 80\n" +
-                    "CMD [\"sh\", \"-c\", \"if [ -z \\\"$(ls -A /usr/share/nginx/html)\\\" ]; then echo 'ERROR: No static files found!'; exit 1; fi; nginx -g 'daemon off;'\"]\n";
+            return """
+                   FROM nginx:alpine
+                   COPY . /usr/share/nginx/html
+                   EXPOSE 80
+                   CMD ["sh", "-c", "if [ -z \\"$(ls -A /usr/share/nginx/html)\\" ]; then echo 'ERROR: No static files found!'; exit 1; fi; nginx -g 'daemon off;'"]
+                   """;
         }
     }
 
     private String generateBackendDockerfile() {
-        return "FROM eclipse-temurin:21-jre-alpine\n" +
-                "WORKDIR /app\n" +
-                "COPY . .\n" +
-                "EXPOSE 7776\n" +
-                "CMD [\"sh\", \"-c\", \"MODULE_DIR=$(find . -type d -name '*.product.*' | head -1); if [ -z \\\"$MODULE_DIR\\\" ]; then echo 'ERROR: No product module found!'; exit 1; fi; java -cp $MODULE_DIR --module-path $MODULE_DIR -m $(basename $MODULE_DIR)\"]\n";
+        return """
+               FROM eclipse-temurin:21-jre-alpine
+               WORKDIR /app
+               COPY . .
+               EXPOSE 7776
+               CMD ["sh", "-c", "MODULE_DIR=$(find . -type d -name '*.product.*' | head -1); if [ -z \\"$MODULE_DIR\\" ]; then echo 'ERROR: No product module found!'; exit 1; fi; java -cp $MODULE_DIR --module-path $MODULE_DIR -m $(basename $MODULE_DIR)"]
+               """;
     }
 
     private void copyDir(Path src, Path dest) throws IOException {

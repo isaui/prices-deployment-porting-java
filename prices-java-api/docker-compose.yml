@@ -116,24 +116,14 @@ services:
       - "traefik.http.services.portainer.loadbalancer.server.port=9000"
     restart: unless-stopped
 
-  cadvisor:
-    image: gcr.io/cadvisor/cadvisor:v0.52.1
-    container_name: prices-cadvisor
-    privileged: true
+  logporter:
+    image: lifailon/logporter:latest
+    container_name: prices-logporter
     volumes:
-      - /:/rootfs:ro
-      - /var/run:/var/run:ro
-      - /sys:/sys:ro
-      - /var/lib/docker/:/var/lib/docker:ro
-      - /dev/disk/:/dev/disk:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
     networks:
       - prices-network
       - prices-proxy-network
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.cadvisor.rule=Host(`cadvisor.${PRICES_DOMAIN:-skripsi.isacitra.com}`)"
-      - "traefik.http.routers.cadvisor.entrypoints=web,websecure"
-      - "traefik.http.services.cadvisor.loadbalancer.server.port=8080"
     restart: unless-stopped
 
   # ============ Observability Stack ============

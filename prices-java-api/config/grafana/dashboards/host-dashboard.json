@@ -14,6 +14,7 @@
         "from": "now-1h",
         "to": "now"
     },
+    "refresh": "10s",
     "timezone": "browser",
     "title": "Host Monitoring",
     "uid": "host-monitoring",
@@ -91,20 +92,32 @@
             },
             "targets": [
                 {
-                    "expr": "100 - (avg by (cpu) (rate(node_cpu_seconds_total{job=\"node-exporter\", mode=\"idle\"}[5m])) * 100)",
-                    "legendFormat": "CPU {{cpu}}"
+                    "expr": "sum by (mode) (rate(node_cpu_seconds_total{job=\"node-exporter\", mode!=\"idle\"}[$__rate_interval]))",
+                    "legendFormat": "{{mode}}"
                 }
             ],
             "fieldConfig": {
                 "defaults": {
-                    "unit": "percent",
+                    "unit": "percentunit",
                     "min": 0,
-                    "max": 100,
                     "custom": {
                         "drawStyle": "line",
-                        "fillOpacity": 10
+                        "fillOpacity": 40,
+                        "lineWidth": 1,
+                        "stacking": {
+                            "mode": "percent"
+                        }
                     }
                 }
+            },
+            "options": {
+                "legend": {
+                    "calcs": ["min", "mean", "max"],
+                    "displayMode": "table",
+                    "placement": "bottom",
+                    "showLegend": true
+                },
+                "tooltip": { "mode": "multi", "sort": "none" }
             }
         },
         {
@@ -194,6 +207,10 @@
                 {
                     "expr": "node_memory_Cached_bytes{job=\"node-exporter\"}",
                     "legendFormat": "Cached"
+                },
+                {
+                    "expr": "node_memory_Buffers_bytes{job=\"node-exporter\"}",
+                    "legendFormat": "Buffers"
                 }
             ],
             "fieldConfig": {
@@ -201,9 +218,111 @@
                     "unit": "bytes",
                     "custom": {
                         "drawStyle": "line",
-                        "fillOpacity": 10
+                        "fillOpacity": 20,
+                        "lineWidth": 1
                     }
                 }
+            },
+            "options": {
+                "legend": {
+                    "calcs": ["min", "mean", "max"],
+                    "displayMode": "table",
+                    "placement": "bottom",
+                    "showLegend": true
+                },
+                "tooltip": { "mode": "multi", "sort": "none" }
+            }
+        },
+        {
+            "type": "row",
+            "title": "Swap",
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 19
+            },
+            "collapsed": false,
+            "id": 106
+        },
+        {
+            "type": "gauge",
+            "title": "Swap Usage",
+            "gridPos": {
+                "h": 6,
+                "w": 6,
+                "x": 0,
+                "y": 20
+            },
+            "id": 13,
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "targets": [
+                {
+                    "expr": "((node_memory_SwapTotal_bytes{job=\"node-exporter\"} - node_memory_SwapFree_bytes{job=\"node-exporter\"}) / node_memory_SwapTotal_bytes{job=\"node-exporter\"}) * 100",
+                    "legendFormat": "Swap Usage"
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "unit": "percent",
+                    "min": 0,
+                    "max": 100,
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            { "color": "green", "value": null },
+                            { "color": "yellow", "value": 25 },
+                            { "color": "red", "value": 50 }
+                        ]
+                    }
+                }
+            }
+        },
+        {
+            "type": "timeseries",
+            "title": "Swap In/Out",
+            "gridPos": {
+                "h": 6,
+                "w": 18,
+                "x": 6,
+                "y": 20
+            },
+            "id": 14,
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "targets": [
+                {
+                    "expr": "rate(node_vmstat_pswpin{job=\"node-exporter\"}[$__rate_interval])",
+                    "legendFormat": "Swap In"
+                },
+                {
+                    "expr": "rate(node_vmstat_pswpout{job=\"node-exporter\"}[$__rate_interval])",
+                    "legendFormat": "Swap Out"
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "unit": "ops",
+                    "custom": {
+                        "drawStyle": "line",
+                        "fillOpacity": 10,
+                        "lineWidth": 1
+                    }
+                }
+            },
+            "options": {
+                "legend": {
+                    "calcs": ["min", "mean", "max"],
+                    "displayMode": "table",
+                    "placement": "bottom",
+                    "showLegend": true
+                },
+                "tooltip": { "mode": "multi", "sort": "none" }
             }
         },
         {
@@ -213,7 +332,7 @@
                 "h": 1,
                 "w": 24,
                 "x": 0,
-                "y": 20
+                "y": 27
             },
             "collapsed": false,
             "id": 102
@@ -225,7 +344,7 @@
                 "h": 8,
                 "w": 12,
                 "x": 0,
-                "y": 21
+                "y": 28
             },
             "id": 5,
             "datasource": {
@@ -234,11 +353,11 @@
             },
             "targets": [
                 {
-                    "expr": "rate(node_disk_read_bytes_total{job=\"node-exporter\"}[5m])",
+                    "expr": "rate(node_disk_read_bytes_total{job=\"node-exporter\"}[$__rate_interval])",
                     "legendFormat": "Read {{device}}"
                 },
                 {
-                    "expr": "rate(node_disk_written_bytes_total{job=\"node-exporter\"}[5m])",
+                    "expr": "rate(node_disk_written_bytes_total{job=\"node-exporter\"}[$__rate_interval])",
                     "legendFormat": "Write {{device}}"
                 }
             ],
@@ -259,7 +378,7 @@
                 "h": 8,
                 "w": 12,
                 "x": 12,
-                "y": 21
+                "y": 28
             },
             "id": 6,
             "datasource": {
@@ -268,11 +387,11 @@
             },
             "targets": [
                 {
-                    "expr": "rate(node_disk_reads_completed_total{job=\"node-exporter\"}[5m])",
+                    "expr": "rate(node_disk_reads_completed_total{job=\"node-exporter\"}[$__rate_interval])",
                     "legendFormat": "Reads {{device}}"
                 },
                 {
-                    "expr": "rate(node_disk_writes_completed_total{job=\"node-exporter\"}[5m])",
+                    "expr": "rate(node_disk_writes_completed_total{job=\"node-exporter\"}[$__rate_interval])",
                     "legendFormat": "Writes {{device}}"
                 }
             ],
@@ -293,7 +412,7 @@
                 "h": 1,
                 "w": 24,
                 "x": 0,
-                "y": 30
+                "y": 37
             },
             "collapsed": false,
             "id": 103
@@ -305,7 +424,7 @@
                 "h": 8,
                 "w": 12,
                 "x": 0,
-                "y": 31
+                "y": 38
             },
             "id": 7,
             "datasource": {
@@ -314,11 +433,11 @@
             },
             "targets": [
                 {
-                    "expr": "rate(node_network_receive_bytes_total{job=\"node-exporter\", device!~\"lo|veth.*|br-.*|docker.*\"}[5m])",
+                    "expr": "rate(node_network_receive_bytes_total{job=\"node-exporter\", device!~\"lo|veth.*|br-.*|docker.*\"}[$__rate_interval])",
                     "legendFormat": "Receive {{device}}"
                 },
                 {
-                    "expr": "rate(node_network_transmit_bytes_total{job=\"node-exporter\", device!~\"lo|veth.*|br-.*|docker.*\"}[5m])",
+                    "expr": "rate(node_network_transmit_bytes_total{job=\"node-exporter\", device!~\"lo|veth.*|br-.*|docker.*\"}[$__rate_interval])",
                     "legendFormat": "Transmit {{device}}"
                 }
             ],
@@ -339,7 +458,7 @@
                 "h": 8,
                 "w": 12,
                 "x": 12,
-                "y": 31
+                "y": 38
             },
             "id": 8,
             "datasource": {
@@ -348,19 +467,19 @@
             },
             "targets": [
                 {
-                    "expr": "rate(node_network_receive_errs_total{job=\"node-exporter\", device!~\"lo|veth.*|br-.*|docker.*\"}[5m]) > 0",
+                    "expr": "rate(node_network_receive_errs_total{job=\"node-exporter\", device!~\"lo|veth.*|br-.*|docker.*\"}[$__rate_interval]) > 0",
                     "legendFormat": "RX Errors {{device}}"
                 },
                 {
-                    "expr": "rate(node_network_transmit_errs_total{job=\"node-exporter\", device!~\"lo|veth.*|br-.*|docker.*\"}[5m]) > 0",
+                    "expr": "rate(node_network_transmit_errs_total{job=\"node-exporter\", device!~\"lo|veth.*|br-.*|docker.*\"}[$__rate_interval]) > 0",
                     "legendFormat": "TX Errors {{device}}"
                 },
                 {
-                    "expr": "rate(node_network_receive_drop_total{job=\"node-exporter\", device!~\"lo|veth.*|br-.*|docker.*\"}[5m]) > 0",
+                    "expr": "rate(node_network_receive_drop_total{job=\"node-exporter\", device!~\"lo|veth.*|br-.*|docker.*\"}[$__rate_interval]) > 0",
                     "legendFormat": "RX Drops {{device}}"
                 },
                 {
-                    "expr": "rate(node_network_transmit_drop_total{job=\"node-exporter\", device!~\"lo|veth.*|br-.*|docker.*\"}[5m]) > 0",
+                    "expr": "rate(node_network_transmit_drop_total{job=\"node-exporter\", device!~\"lo|veth.*|br-.*|docker.*\"}[$__rate_interval]) > 0",
                     "legendFormat": "TX Drops {{device}}"
                 }
             ],
@@ -381,7 +500,7 @@
                 "h": 1,
                 "w": 24,
                 "x": 0,
-                "y": 40
+                "y": 47
             },
             "collapsed": false,
             "id": 104
@@ -393,7 +512,7 @@
                 "h": 8,
                 "w": 12,
                 "x": 0,
-                "y": 41
+                "y": 48
             },
             "id": 9,
             "datasource": {
@@ -438,7 +557,7 @@
                 "h": 8,
                 "w": 12,
                 "x": 12,
-                "y": 41
+                "y": 48
             },
             "id": 10,
             "datasource": {
@@ -468,7 +587,7 @@
                 "h": 1,
                 "w": 24,
                 "x": 0,
-                "y": 50
+                "y": 57
             },
             "collapsed": false,
             "id": 105
@@ -480,7 +599,7 @@
                 "h": 4,
                 "w": 6,
                 "x": 0,
-                "y": 51
+                "y": 58
             },
             "id": 11,
             "datasource": {
@@ -506,7 +625,7 @@
                 "h": 8,
                 "w": 18,
                 "x": 6,
-                "y": 51
+                "y": 58
             },
             "id": 12,
             "datasource": {

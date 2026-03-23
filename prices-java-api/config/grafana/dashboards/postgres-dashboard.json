@@ -39,6 +39,7 @@
         "from": "now-1h",
         "to": "now"
     },
+    "refresh": "10s",
     "timezone": "browser",
     "title": "PostgreSQL Monitoring",
     "uid": "postgresql-monitoring",
@@ -294,6 +295,116 @@
         },
         {
             "type": "row",
+            "title": "PG Settings",
+            "gridPos": { "h": 1, "w": 24, "x": 0, "y": 5 },
+            "collapsed": true,
+            "id": 110,
+            "panels": [
+                {
+                    "type": "stat",
+                    "title": "Max Connections",
+                    "gridPos": { "h": 4, "w": 4, "x": 0, "y": 6 },
+                    "id": 17,
+                    "datasource": { "type": "prometheus", "uid": "prometheus" },
+                    "targets": [
+                        {
+                            "expr": "pg_settings_max_connections{job=\"postgres-exporter\"}",
+                            "legendFormat": "Max"
+                        }
+                    ],
+                    "fieldConfig": {
+                        "defaults": {
+                            "thresholds": {
+                                "mode": "absolute",
+                                "steps": [{ "color": "blue", "value": null }]
+                            }
+                        }
+                    }
+                },
+                {
+                    "type": "stat",
+                    "title": "Shared Buffers",
+                    "gridPos": { "h": 4, "w": 4, "x": 4, "y": 6 },
+                    "id": 18,
+                    "datasource": { "type": "prometheus", "uid": "prometheus" },
+                    "targets": [
+                        {
+                            "expr": "pg_settings_shared_buffers_bytes{job=\"postgres-exporter\"}",
+                            "legendFormat": "Shared Buffers"
+                        }
+                    ],
+                    "fieldConfig": {
+                        "defaults": { "unit": "bytes" }
+                    }
+                },
+                {
+                    "type": "stat",
+                    "title": "Effective Cache Size",
+                    "gridPos": { "h": 4, "w": 4, "x": 8, "y": 6 },
+                    "id": 19,
+                    "datasource": { "type": "prometheus", "uid": "prometheus" },
+                    "targets": [
+                        {
+                            "expr": "pg_settings_effective_cache_size_bytes{job=\"postgres-exporter\"}",
+                            "legendFormat": "Effective Cache"
+                        }
+                    ],
+                    "fieldConfig": {
+                        "defaults": { "unit": "bytes" }
+                    }
+                },
+                {
+                    "type": "stat",
+                    "title": "Work Mem",
+                    "gridPos": { "h": 4, "w": 4, "x": 12, "y": 6 },
+                    "id": 20,
+                    "datasource": { "type": "prometheus", "uid": "prometheus" },
+                    "targets": [
+                        {
+                            "expr": "pg_settings_work_mem_bytes{job=\"postgres-exporter\"}",
+                            "legendFormat": "Work Mem"
+                        }
+                    ],
+                    "fieldConfig": {
+                        "defaults": { "unit": "bytes" }
+                    }
+                },
+                {
+                    "type": "stat",
+                    "title": "Maintenance Work Mem",
+                    "gridPos": { "h": 4, "w": 4, "x": 16, "y": 6 },
+                    "id": 21,
+                    "datasource": { "type": "prometheus", "uid": "prometheus" },
+                    "targets": [
+                        {
+                            "expr": "pg_settings_maintenance_work_mem_bytes{job=\"postgres-exporter\"}",
+                            "legendFormat": "Maintenance Work Mem"
+                        }
+                    ],
+                    "fieldConfig": {
+                        "defaults": { "unit": "bytes" }
+                    }
+                },
+                {
+                    "type": "stat",
+                    "title": "PG Uptime",
+                    "gridPos": { "h": 4, "w": 4, "x": 20, "y": 6 },
+                    "id": 22,
+                    "datasource": { "type": "prometheus", "uid": "prometheus" },
+                    "targets": [
+                        {
+                            "expr": "time() - pg_postmaster_start_time_seconds{job=\"postgres-exporter\"}",
+                            "legendFormat": "Uptime"
+                        }
+                    ],
+                    "fieldConfig": {
+                        "defaults": { "unit": "s" }
+                    }
+                }
+            ]
+        },
+        {
+            "type": "row",
             "title": "Connections",
             "gridPos": {
                 "h": 1,
@@ -395,11 +506,11 @@
             },
             "targets": [
                 {
-                    "expr": "sum by (datname) (rate(pg_stat_database_xact_commit{job=\"postgres-exporter\", datname=~\"$database\"}[5m]))",
+                    "expr": "sum by (datname) (rate(pg_stat_database_xact_commit{job=\"postgres-exporter\", datname=~\"$database\"}[$__rate_interval]))",
                     "legendFormat": "Commits {{datname}}"
                 },
                 {
-                    "expr": "sum by (datname) (rate(pg_stat_database_xact_rollback{job=\"postgres-exporter\", datname=~\"$database\"}[5m]))",
+                    "expr": "sum by (datname) (rate(pg_stat_database_xact_rollback{job=\"postgres-exporter\", datname=~\"$database\"}[$__rate_interval]))",
                     "legendFormat": "Rollbacks {{datname}}"
                 }
             ],
@@ -429,19 +540,19 @@
             },
             "targets": [
                 {
-                    "expr": "sum(rate(pg_stat_database_tup_fetched{job=\"postgres-exporter\", datname=~\"$database\"}[5m]))",
+                    "expr": "sum(rate(pg_stat_database_tup_fetched{job=\"postgres-exporter\", datname=~\"$database\"}[$__rate_interval]))",
                     "legendFormat": "Fetched"
                 },
                 {
-                    "expr": "sum(rate(pg_stat_database_tup_inserted{job=\"postgres-exporter\", datname=~\"$database\"}[5m]))",
+                    "expr": "sum(rate(pg_stat_database_tup_inserted{job=\"postgres-exporter\", datname=~\"$database\"}[$__rate_interval]))",
                     "legendFormat": "Inserted"
                 },
                 {
-                    "expr": "sum(rate(pg_stat_database_tup_updated{job=\"postgres-exporter\", datname=~\"$database\"}[5m]))",
+                    "expr": "sum(rate(pg_stat_database_tup_updated{job=\"postgres-exporter\", datname=~\"$database\"}[$__rate_interval]))",
                     "legendFormat": "Updated"
                 },
                 {
-                    "expr": "sum(rate(pg_stat_database_tup_deleted{job=\"postgres-exporter\", datname=~\"$database\"}[5m]))",
+                    "expr": "sum(rate(pg_stat_database_tup_deleted{job=\"postgres-exporter\", datname=~\"$database\"}[$__rate_interval]))",
                     "legendFormat": "Deleted"
                 }
             ],
@@ -587,11 +698,11 @@
             },
             "targets": [
                 {
-                    "expr": "rate(pg_stat_database_deadlocks{job=\"postgres-exporter\", datname=~\"$database\"}[5m]) > 0",
+                    "expr": "rate(pg_stat_database_deadlocks{job=\"postgres-exporter\", datname=~\"$database\"}[$__rate_interval]) > 0",
                     "legendFormat": "Deadlocks {{datname}}"
                 },
                 {
-                    "expr": "rate(pg_stat_database_conflicts{job=\"postgres-exporter\", datname=~\"$database\"}[5m]) > 0",
+                    "expr": "rate(pg_stat_database_conflicts{job=\"postgres-exporter\", datname=~\"$database\"}[$__rate_interval]) > 0",
                     "legendFormat": "Conflicts {{datname}}"
                 }
             ],
@@ -633,7 +744,7 @@
             },
             "targets": [
                 {
-                    "expr": "rate(pg_stat_database_temp_bytes{job=\"postgres-exporter\", datname=~\"$database\"}[5m])",
+                    "expr": "rate(pg_stat_database_temp_bytes{job=\"postgres-exporter\", datname=~\"$database\"}[$__rate_interval])",
                     "legendFormat": "{{datname}}"
                 }
             ],
@@ -663,11 +774,11 @@
             },
             "targets": [
                 {
-                    "expr": "sum(rate(pg_stat_database_blks_read{job=\"postgres-exporter\", datname=~\"$database\"}[5m]))",
+                    "expr": "sum(rate(pg_stat_database_blks_read{job=\"postgres-exporter\", datname=~\"$database\"}[$__rate_interval]))",
                     "legendFormat": "Disk Reads"
                 },
                 {
-                    "expr": "sum(rate(pg_stat_database_blks_hit{job=\"postgres-exporter\", datname=~\"$database\"}[5m]))",
+                    "expr": "sum(rate(pg_stat_database_blks_hit{job=\"postgres-exporter\", datname=~\"$database\"}[$__rate_interval]))",
                     "legendFormat": "Cache Hits"
                 }
             ],

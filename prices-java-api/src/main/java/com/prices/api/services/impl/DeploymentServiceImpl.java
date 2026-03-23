@@ -9,6 +9,7 @@ import com.prices.api.models.Project;
 import com.prices.api.repositories.DeploymentHistoryRepository;
 import com.prices.api.repositories.ProjectRepository;
 import com.prices.api.services.DeploymentService;
+import com.prices.api.services.deployment.queue.DeploymentQueue;
 import com.prices.api.services.deployment.DeploymentContext;
 import com.prices.api.services.deployment.DeploymentPipeline;
 import com.prices.api.services.deployment.stages.*;
@@ -21,11 +22,12 @@ import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Sinks;
 
+import jakarta.annotation.PostConstruct;
+
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
@@ -37,9 +39,16 @@ public class DeploymentServiceImpl implements DeploymentService {
     private final ProjectRepository projectRepo;
     private final DockerConfig dockerConfig;
     private final DatabaseConfig databaseConfig;
+    private final DeploymentQueue deploymentQueue;
 
     // Active log streams
     private final Map<Long, Sinks.Many<String>> logSinks = new ConcurrentHashMap<>();
+
+    @PostConstruct
+    void init() {
+        deploymentQueue.setConsumer(this::executeDeployment);
+        deploymentQueue.start();
+    }
 
     @Override
     @Transactional
@@ -50,15 +59,25 @@ public class DeploymentServiceImpl implements DeploymentService {
         DeploymentHistory dep = new DeploymentHistory();
         dep.setProjectId(req.getProjectID());
         dep.setUserId(req.getUserID());
-        dep.setStatus(DeploymentStatus.IN_PROGRESS);
+        dep.setStatus(DeploymentStatus.QUEUED);
         dep.setVersion(req.getVersion());
         dep.setEnvironment("production");
         dep.setStartedAt(LocalDateTime.now());
 
         deploymentRepo.save(dep);
 
-        // Execute asynchronously
-        CompletableFuture.runAsync(() -> executeDeployment(dep, project, req));
+        // Create log sink early so user can subscribe to SSE immediately
+        Sinks.Many<String> logSink = Sinks.many().multicast().onBackpressureBuffer();
+        logSinks.put(dep.getId(), logSink);
+
+        int queueSize = deploymentQueue.getQueueSize();
+        if (queueSize > 0) {
+            logSink.tryEmitNext(String.format("Deployment queued (position: %d). Waiting for available slot...", queueSize + 1));
+        } else {
+            logSink.tryEmitNext("Deployment queued. Starting shortly...");
+        }
+
+        deploymentQueue.enqueue(dep, project, req);
 
         return dep;
     }
@@ -101,9 +120,16 @@ public class DeploymentServiceImpl implements DeploymentService {
     }
 
     private void executeDeployment(DeploymentHistory dep, Project project, DeployRequest req) {
-        // Setup Log Sink
-        Sinks.Many<String> logSink = Sinks.many().multicast().onBackpressureBuffer();
-        logSinks.put(dep.getId(), logSink);
+        // Mark as IN_PROGRESS now that it's dequeued
+        updateDeploymentStatus(dep, DeploymentStatus.IN_PROGRESS, null);
+
+        // Reuse existing log sink (created during enqueue)
+        Sinks.Many<String> logSink = logSinks.get(dep.getId());
+        if (logSink == null) {
+            logSink = Sinks.many().multicast().onBackpressureBuffer();
+            logSinks.put(dep.getId(), logSink);
+        }
+        logSink.tryEmitNext("Deployment started.");
 
         // Detect redeploy
         boolean isRedeploy = deploymentRepo

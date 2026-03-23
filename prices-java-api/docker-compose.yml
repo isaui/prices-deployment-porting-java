@@ -80,11 +80,14 @@ services:
       - "--entrypoints.web.address=:80"
       - "--entrypoints.websecure.address=:443"
       - "--log.level=INFO"
+      - "--metrics.prometheus=true"
+      - "--metrics.prometheus.addEntryPointsLabels=true"
+      - "--metrics.prometheus.addRoutersLabels=true"
+      - "--metrics.prometheus.addServicesLabels=true"
     ports:
       - "80:80"
       - "443:443"
       - "8080:8080"  # Traefik dashboard (internal only)
-    volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./docker-vol/traefik/dynamic:/etc/traefik/dynamic
     networks:
@@ -133,6 +136,27 @@ services:
     restart: unless-stopped
 
   # ============ Observability Stack ============
+
+  node-exporter:
+    image: prom/node-exporter:v1.9.0
+    container_name: prices-node-exporter
+    command:
+      - '--path.rootfs=/host'
+    pid: host
+    volumes:
+      - '/:/host:ro,rslave'
+    networks:
+      - prices-network
+    restart: unless-stopped
+
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter:v0.17.1
+    container_name: prices-postgres-exporter
+    environment:
+      - DATA_SOURCE_NAME=${PG_EXPORTER_DSN:-postgresql://deployment:deployment123@10.119.106.82:5432/postgres?sslmode=disable}
+    networks:
+      - prices-network
+    restart: unless-stopped
 
   otel-collector:
     image: otel/opentelemetry-collector-contrib:0.120.0
@@ -185,6 +209,7 @@ services:
     volumes:
       - ./docker-vol/grafana:/var/lib/grafana
       - ./config/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./config/grafana/dashboards:/var/lib/grafana/dashboards:ro
     networks:
       - prices-network
       - prices-proxy-network

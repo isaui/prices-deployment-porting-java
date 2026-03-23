@@ -1,0 +1,685 @@
+{
+    "annotations": {
+        "list": []
+    },
+    "editable": true,
+    "graphTooltip": 1,
+    "schemaVersion": 39,
+    "tags": [
+        "monitoring",
+        "postgresql",
+        "database"
+    ],
+    "templating": {
+        "list": [
+            {
+                "current": {
+                    "selected": true,
+                    "text": "All",
+                    "value": "$__all"
+                },
+                "datasource": {
+                    "type": "prometheus",
+                    "uid": "prometheus"
+                },
+                "definition": "label_values(pg_database_size_bytes{job=\"postgres-exporter\", datname!~\"template.*\"}, datname)",
+                "allValue": ".*",
+                "includeAll": true,
+                "multi": true,
+                "name": "database",
+                "query": {
+                    "query": "label_values(pg_database_size_bytes{job=\"postgres-exporter\", datname!~\"template.*\"}, datname)"
+                },
+                "refresh": 2,
+                "type": "query"
+            }
+        ]
+    },
+    "time": {
+        "from": "now-1h",
+        "to": "now"
+    },
+    "timezone": "browser",
+    "title": "PostgreSQL Monitoring",
+    "uid": "postgresql-monitoring",
+    "panels": [
+        {
+            "type": "row",
+            "title": "Overview",
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 0
+            },
+            "collapsed": false,
+            "id": 100
+        },
+        {
+            "type": "stat",
+            "title": "PostgreSQL Up",
+            "gridPos": {
+                "h": 4,
+                "w": 4,
+                "x": 0,
+                "y": 1
+            },
+            "id": 1,
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "targets": [
+                {
+                    "expr": "pg_up{job=\"postgres-exporter\"}",
+                    "legendFormat": "Status"
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "mappings": [
+                        {
+                            "type": "value",
+                            "options": {
+                                "0": {
+                                    "text": "DOWN",
+                                    "color": "red"
+                                },
+                                "1": {
+                                    "text": "UP",
+                                    "color": "green"
+                                }
+                            }
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "type": "stat",
+            "title": "Active Connections",
+            "gridPos": {
+                "h": 4,
+                "w": 4,
+                "x": 4,
+                "y": 1
+            },
+            "id": 2,
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "targets": [
+                {
+                    "expr": "sum(pg_stat_activity_count{job=\"postgres-exporter\", state=\"active\", datname=~\"$database\"})",
+                    "legendFormat": "Active"
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "yellow",
+                                "value": 50
+                            },
+                            {
+                                "color": "red",
+                                "value": 100
+                            }
+                        ]
+                    }
+                }
+            }
+        },
+        {
+            "type": "stat",
+            "title": "Total Connections",
+            "gridPos": {
+                "h": 4,
+                "w": 4,
+                "x": 8,
+                "y": 1
+            },
+            "id": 3,
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "targets": [
+                {
+                    "expr": "sum(pg_stat_activity_count{job=\"postgres-exporter\", datname=~\"$database\"})",
+                    "legendFormat": "Total"
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "yellow",
+                                "value": 80
+                            },
+                            {
+                                "color": "red",
+                                "value": 150
+                            }
+                        ]
+                    }
+                }
+            }
+        },
+        {
+            "type": "stat",
+            "title": "Database Size",
+            "gridPos": {
+                "h": 4,
+                "w": 4,
+                "x": 12,
+                "y": 1
+            },
+            "id": 4,
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "targets": [
+                {
+                    "expr": "sum(pg_database_size_bytes{job=\"postgres-exporter\", datname=~\"$database\"})",
+                    "legendFormat": "Total Size"
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "unit": "bytes"
+                }
+            }
+        },
+        {
+            "type": "stat",
+            "title": "Cache Hit Ratio",
+            "gridPos": {
+                "h": 4,
+                "w": 4,
+                "x": 16,
+                "y": 1
+            },
+            "id": 5,
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "targets": [
+                {
+                    "expr": "sum(pg_stat_database_blks_hit{job=\"postgres-exporter\", datname=~\"$database\"}) / (sum(pg_stat_database_blks_hit{job=\"postgres-exporter\", datname=~\"$database\"}) + sum(pg_stat_database_blks_read{job=\"postgres-exporter\", datname=~\"$database\"})) * 100",
+                    "legendFormat": "Hit Ratio"
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "unit": "percent",
+                    "min": 0,
+                    "max": 100,
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "red",
+                                "value": null
+                            },
+                            {
+                                "color": "yellow",
+                                "value": 90
+                            },
+                            {
+                                "color": "green",
+                                "value": 99
+                            }
+                        ]
+                    }
+                }
+            }
+        },
+        {
+            "type": "stat",
+            "title": "Locks",
+            "gridPos": {
+                "h": 4,
+                "w": 4,
+                "x": 20,
+                "y": 1
+            },
+            "id": 6,
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "targets": [
+                {
+                    "expr": "sum(pg_locks_count{job=\"postgres-exporter\", datname=~\"$database\"})",
+                    "legendFormat": "Total Locks"
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "yellow",
+                                "value": 50
+                            },
+                            {
+                                "color": "red",
+                                "value": 100
+                            }
+                        ]
+                    }
+                }
+            }
+        },
+        {
+            "type": "row",
+            "title": "Connections",
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 6
+            },
+            "collapsed": false,
+            "id": 101
+        },
+        {
+            "type": "timeseries",
+            "title": "Connections by State",
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 7
+            },
+            "id": 7,
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "targets": [
+                {
+                    "expr": "sum by (state) (pg_stat_activity_count{job=\"postgres-exporter\", datname=~\"$database\"})",
+                    "legendFormat": "{{state}}"
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "unit": "short",
+                    "custom": {
+                        "drawStyle": "line",
+                        "fillOpacity": 20,
+                        "stacking": {
+                            "mode": "normal"
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "type": "timeseries",
+            "title": "Connections by Database",
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 12,
+                "y": 7
+            },
+            "id": 8,
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "targets": [
+                {
+                    "expr": "sum by (datname) (pg_stat_activity_count{job=\"postgres-exporter\", datname=~\"$database\", datname!=\"\"})",
+                    "legendFormat": "{{datname}}"
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "unit": "short",
+                    "custom": {
+                        "drawStyle": "line",
+                        "fillOpacity": 10
+                    }
+                }
+            }
+        },
+        {
+            "type": "row",
+            "title": "Transactions",
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 16
+            },
+            "collapsed": false,
+            "id": 102
+        },
+        {
+            "type": "timeseries",
+            "title": "Transactions per Second",
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 17
+            },
+            "id": 9,
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "targets": [
+                {
+                    "expr": "sum by (datname) (rate(pg_stat_database_xact_commit{job=\"postgres-exporter\", datname=~\"$database\"}[5m]))",
+                    "legendFormat": "Commits {{datname}}"
+                },
+                {
+                    "expr": "sum by (datname) (rate(pg_stat_database_xact_rollback{job=\"postgres-exporter\", datname=~\"$database\"}[5m]))",
+                    "legendFormat": "Rollbacks {{datname}}"
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "unit": "ops",
+                    "custom": {
+                        "drawStyle": "line",
+                        "fillOpacity": 10
+                    }
+                }
+            }
+        },
+        {
+            "type": "timeseries",
+            "title": "Rows Fetched / Returned / Inserted / Updated / Deleted",
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 12,
+                "y": 17
+            },
+            "id": 10,
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "targets": [
+                {
+                    "expr": "sum(rate(pg_stat_database_tup_fetched{job=\"postgres-exporter\", datname=~\"$database\"}[5m]))",
+                    "legendFormat": "Fetched"
+                },
+                {
+                    "expr": "sum(rate(pg_stat_database_tup_inserted{job=\"postgres-exporter\", datname=~\"$database\"}[5m]))",
+                    "legendFormat": "Inserted"
+                },
+                {
+                    "expr": "sum(rate(pg_stat_database_tup_updated{job=\"postgres-exporter\", datname=~\"$database\"}[5m]))",
+                    "legendFormat": "Updated"
+                },
+                {
+                    "expr": "sum(rate(pg_stat_database_tup_deleted{job=\"postgres-exporter\", datname=~\"$database\"}[5m]))",
+                    "legendFormat": "Deleted"
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "unit": "ops",
+                    "custom": {
+                        "drawStyle": "line",
+                        "fillOpacity": 10
+                    }
+                }
+            }
+        },
+        {
+            "type": "row",
+            "title": "Database Size & Cache",
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 26
+            },
+            "collapsed": false,
+            "id": 103
+        },
+        {
+            "type": "timeseries",
+            "title": "Database Size",
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 27
+            },
+            "id": 11,
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "targets": [
+                {
+                    "expr": "pg_database_size_bytes{job=\"postgres-exporter\", datname=~\"$database\"}",
+                    "legendFormat": "{{datname}}"
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "unit": "bytes",
+                    "custom": {
+                        "drawStyle": "line",
+                        "fillOpacity": 10
+                    }
+                }
+            }
+        },
+        {
+            "type": "timeseries",
+            "title": "Cache Hit Ratio Over Time",
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 12,
+                "y": 27
+            },
+            "id": 12,
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "targets": [
+                {
+                    "expr": "pg_stat_database_blks_hit{job=\"postgres-exporter\", datname=~\"$database\"} / (pg_stat_database_blks_hit{job=\"postgres-exporter\", datname=~\"$database\"} + pg_stat_database_blks_read{job=\"postgres-exporter\", datname=~\"$database\"}) * 100",
+                    "legendFormat": "{{datname}}"
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "unit": "percent",
+                    "min": 0,
+                    "max": 100,
+                    "custom": {
+                        "drawStyle": "line",
+                        "fillOpacity": 10
+                    }
+                }
+            }
+        },
+        {
+            "type": "row",
+            "title": "Locks & Conflicts",
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 36
+            },
+            "collapsed": false,
+            "id": 104
+        },
+        {
+            "type": "timeseries",
+            "title": "Locks by Mode",
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 37
+            },
+            "id": 13,
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "targets": [
+                {
+                    "expr": "sum by (mode) (pg_locks_count{job=\"postgres-exporter\", datname=~\"$database\"})",
+                    "legendFormat": "{{mode}}"
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "unit": "short",
+                    "custom": {
+                        "drawStyle": "line",
+                        "fillOpacity": 10
+                    }
+                }
+            }
+        },
+        {
+            "type": "timeseries",
+            "title": "Deadlocks & Conflicts",
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 12,
+                "y": 37
+            },
+            "id": 14,
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "targets": [
+                {
+                    "expr": "rate(pg_stat_database_deadlocks{job=\"postgres-exporter\", datname=~\"$database\"}[5m]) > 0",
+                    "legendFormat": "Deadlocks {{datname}}"
+                },
+                {
+                    "expr": "rate(pg_stat_database_conflicts{job=\"postgres-exporter\", datname=~\"$database\"}[5m]) > 0",
+                    "legendFormat": "Conflicts {{datname}}"
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "unit": "ops",
+                    "custom": {
+                        "drawStyle": "bars",
+                        "fillOpacity": 50
+                    }
+                }
+            }
+        },
+        {
+            "type": "row",
+            "title": "Temp Files & Slow Queries",
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 46
+            },
+            "collapsed": false,
+            "id": 105
+        },
+        {
+            "type": "timeseries",
+            "title": "Temp Files Written",
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 47
+            },
+            "id": 15,
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "targets": [
+                {
+                    "expr": "rate(pg_stat_database_temp_bytes{job=\"postgres-exporter\", datname=~\"$database\"}[5m])",
+                    "legendFormat": "{{datname}}"
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "unit": "Bps",
+                    "custom": {
+                        "drawStyle": "line",
+                        "fillOpacity": 10
+                    }
+                }
+            }
+        },
+        {
+            "type": "timeseries",
+            "title": "Block I/O (Read vs Hit)",
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 12,
+                "y": 47
+            },
+            "id": 16,
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "targets": [
+                {
+                    "expr": "sum(rate(pg_stat_database_blks_read{job=\"postgres-exporter\", datname=~\"$database\"}[5m]))",
+                    "legendFormat": "Disk Reads"
+                },
+                {
+                    "expr": "sum(rate(pg_stat_database_blks_hit{job=\"postgres-exporter\", datname=~\"$database\"}[5m]))",
+                    "legendFormat": "Cache Hits"
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "unit": "ops",
+                    "custom": {
+                        "drawStyle": "line",
+                        "fillOpacity": 10
+                    }
+                }
+            }
+        }
+    ]
+}

@@ -82,10 +82,13 @@ services:
       - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
       - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
       - "--log.level=INFO"
+      - "--metrics.prometheus=true"
+      - "--metrics.prometheus.addEntryPointsLabels=true"
+      - "--metrics.prometheus.addRoutersLabels=true"
+      - "--metrics.prometheus.addServicesLabels=true"
     ports:
       - "80:80"
       - "443:443"
-    volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./docker-vol/traefik/letsencrypt:/letsencrypt
       - ./docker-vol/traefik/dynamic:/etc/traefik/dynamic
@@ -132,6 +135,7 @@ services:
       - /var/lib/docker/:/var/lib/docker:ro
       - /dev/disk/:/dev/disk:ro
     networks:
+      - prices-network
       - prices-proxy-network
     labels:
       - "traefik.enable=true"
@@ -140,6 +144,122 @@ services:
       - "traefik.http.routers.cadvisor.tls=true"
       - "traefik.http.routers.cadvisor.tls.certresolver=letsencrypt"
       - "traefik.http.services.cadvisor.loadbalancer.server.port=8080"
+    restart: unless-stopped
+
+  # ============ Observability Stack ============
+
+  node-exporter:
+    image: prom/node-exporter:v1.9.0
+    container_name: prices-node-exporter
+    command:
+      - '--path.rootfs=/host'
+    pid: host
+    volumes:
+      - '/:/host:ro,rslave'
+    networks:
+      - prices-network
+    restart: unless-stopped
+
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter:v0.17.1
+    container_name: prices-postgres-exporter
+    environment:
+      - DATA_SOURCE_NAME=${PG_EXPORTER_DSN:-postgresql://deployment:deployment123@10.119.106.82:5432/postgres?sslmode=disable}
+    networks:
+      - prices-network
+    restart: unless-stopped
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.120.0
+    container_name: prices-otel-collector
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    volumes:
+      - ./config/otel/otel-collector-config.yaml:/etc/otel-collector-config.yaml:ro
+    networks:
+      - prices-network
+      - prices-proxy-network
+    depends_on:
+      - tempo
+      - prometheus
+      - loki
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:v3.4.0
+    container_name: prices-prometheus
+    user: "0"
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.enable-lifecycle"
+      - "--web.enable-remote-write-receiver"
+    volumes:
+      - ./config/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./docker-vol/prometheus:/prometheus
+    networks:
+      - prices-network
+      - prices-proxy-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.prometheus.rule=Host(`prometheus.${PRICES_DOMAIN:-skripsi.isacitra.com}`)"
+      - "traefik.http.routers.prometheus.entrypoints=websecure"
+      - "traefik.http.routers.prometheus.tls=true"
+      - "traefik.http.routers.prometheus.tls.certresolver=letsencrypt"
+      - "traefik.http.services.prometheus.loadbalancer.server.port=9090"
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:11.6.0
+    container_name: prices-grafana
+    user: "0"
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin123}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - ./docker-vol/grafana:/var/lib/grafana
+      - ./config/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./config/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    networks:
+      - prices-network
+      - prices-proxy-network
+    depends_on:
+      - prometheus
+      - loki
+      - tempo
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.grafana.rule=Host(`grafana.${PRICES_DOMAIN:-skripsi.isacitra.com}`)"
+      - "traefik.http.routers.grafana.entrypoints=websecure"
+      - "traefik.http.routers.grafana.tls=true"
+      - "traefik.http.routers.grafana.tls.certresolver=letsencrypt"
+      - "traefik.http.services.grafana.loadbalancer.server.port=3000"
+    restart: unless-stopped
+
+  loki:
+    image: grafana/loki:3.5.0
+    container_name: prices-loki
+    user: "0"
+    command: -config.file=/etc/loki/loki-config.yaml
+    volumes:
+      - ./config/loki/loki-config.yaml:/etc/loki/loki-config.yaml:ro
+      - ./docker-vol/loki:/loki
+    networks:
+      - prices-network
+      - prices-proxy-network
+    restart: unless-stopped
+
+  tempo:
+    image: grafana/tempo:2.7.0
+    container_name: prices-tempo
+    user: "0"
+    command: ["-config.file=/etc/tempo/tempo-config.yaml"]
+    volumes:
+      - ./config/tempo/tempo-config.yaml:/etc/tempo/tempo-config.yaml:ro
+      - ./docker-vol/tempo:/tmp/tempo
+    networks:
+      - prices-network
+      - prices-proxy-network
     restart: unless-stopped
 
 networks:

@@ -13,17 +13,6 @@ distributor:
 ingester:
   max_block_duration: 5m
 
-metrics_generator:
-  registry:
-    external_labels:
-      source: tempo
-      cluster: docker-compose
-  storage:
-    path: /tmp/tempo/generator/wal
-    remote_write:
-      - url: http://prometheus:9090/api/v1/write
-        send_exemplars: true
-
 storage:
   trace:
     backend: local
@@ -31,10 +20,3 @@ storage:
       path: /tmp/tempo/wal
     local:
       path: /tmp/tempo/blocks
-    block:
-      bloom_filter_false_positive: 0.05
-
-overrides:
-  defaults:
-    metrics_generator:
-      processors: [service-graphs, span-metrics]

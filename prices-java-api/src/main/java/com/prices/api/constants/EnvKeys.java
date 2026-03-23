@@ -17,6 +17,10 @@ public class EnvKeys {
     public static final String ENV_KEY_VITE_STATIC_SERVER_URL = "VITE_STATIC_SERVER_URL";
     public static final String ENV_KEY_VITE_PORT = "VITE_PORT";
 
+    // OpenTelemetry env vars
+    public static final String ENV_KEY_OTEL_EXPORTER_OTLP_ENDPOINT = "OTEL_EXPORTER_OTLP_ENDPOINT";
+    public static final String ENV_KEY_OTEL_SERVICE_NAME = "OTEL_SERVICE_NAME";
+
     public static List<String> autoProvidedEnvKeys() {
         return List.of(
                 ENV_KEY_HOST_BE,
@@ -28,6 +32,8 @@ public class EnvKeys {
                 ENV_KEY_VITE_BACKEND_URL,
                 ENV_KEY_VITE_SITE_URL,
                 ENV_KEY_VITE_STATIC_SERVER_URL,
-                ENV_KEY_VITE_PORT);
+                ENV_KEY_VITE_PORT,
+                ENV_KEY_OTEL_EXPORTER_OTLP_ENDPOINT,
+                ENV_KEY_OTEL_SERVICE_NAME);
     }
 }

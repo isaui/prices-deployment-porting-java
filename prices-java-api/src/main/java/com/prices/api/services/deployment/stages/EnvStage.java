@@ -11,6 +11,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import static java.util.Map.entry;
+
 @Slf4j
 public class EnvStage implements PipelineStage {
 
@@ -70,17 +72,19 @@ public class EnvStage implements PipelineStage {
         String siteURL = NamingUtils.fullURL(ctx.getDefaultFrontendURL());
         String staticServerURL = NamingUtils.staticURL(ctx.getDefaultFrontendURL());
 
-        return Map.of(
-                EnvKeys.ENV_KEY_HOST_BE, "0.0.0.0",
-                EnvKeys.ENV_KEY_PORT_BE, "7776",
-                EnvKeys.ENV_KEY_DB_URL, dbURL,
-                EnvKeys.ENV_KEY_DB_USERNAME, dbUser,
-                EnvKeys.ENV_KEY_DB_NAME, dbName,
-                EnvKeys.ENV_KEY_DB_PASSWORD, dbPassword,
-                EnvKeys.ENV_KEY_VITE_BACKEND_URL, backendURL,
-                EnvKeys.ENV_KEY_VITE_SITE_URL, siteURL,
-                EnvKeys.ENV_KEY_VITE_STATIC_SERVER_URL, staticServerURL,
-                EnvKeys.ENV_KEY_VITE_PORT, "3000");
+        return Map.ofEntries(
+                entry(EnvKeys.ENV_KEY_HOST_BE, "0.0.0.0"),
+                entry(EnvKeys.ENV_KEY_PORT_BE, "7776"),
+                entry(EnvKeys.ENV_KEY_DB_URL, dbURL),
+                entry(EnvKeys.ENV_KEY_DB_USERNAME, dbUser),
+                entry(EnvKeys.ENV_KEY_DB_NAME, dbName),
+                entry(EnvKeys.ENV_KEY_DB_PASSWORD, dbPassword),
+                entry(EnvKeys.ENV_KEY_VITE_BACKEND_URL, backendURL),
+                entry(EnvKeys.ENV_KEY_VITE_SITE_URL, siteURL),
+                entry(EnvKeys.ENV_KEY_VITE_STATIC_SERVER_URL, staticServerURL),
+                entry(EnvKeys.ENV_KEY_VITE_PORT, "3000"),
+                entry(EnvKeys.ENV_KEY_OTEL_EXPORTER_OTLP_ENDPOINT, "http://otel-collector:4318"),
+                entry(EnvKeys.ENV_KEY_OTEL_SERVICE_NAME, slug));
     }
 
     private String maskValue(String key, String value) {

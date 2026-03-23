@@ -483,7 +483,7 @@
         },
         {
             "type": "row",
-            "title": "TLS",
+            "title": "Service Connections & Retries",
             "gridPos": {
                 "h": 1,
                 "w": 24,
@@ -494,11 +494,11 @@
             "id": 105
         },
         {
-            "type": "table",
-            "title": "TLS Certificate Expiry",
+            "type": "timeseries",
+            "title": "Open Connections by Service",
             "gridPos": {
-                "h": 6,
-                "w": 24,
+                "h": 8,
+                "w": 12,
                 "x": 0,
                 "y": 47
             },
@@ -509,47 +509,48 @@
             },
             "targets": [
                 {
-                    "expr": "(traefik_tls_certs_not_after{job=\"traefik\"} - time()) / 86400",
-                    "legendFormat": "{{cn}} ({{sans}})",
-                    "instant": true,
-                    "format": "table"
+                    "expr": "sum by (service) (traefik_service_open_connections{job=\"traefik\", service=~\"$service\"})",
+                    "legendFormat": "{{service}}"
                 }
             ],
             "fieldConfig": {
                 "defaults": {
-                    "unit": "d",
-                    "thresholds": {
-                        "mode": "absolute",
-                        "steps": [
-                            {
-                                "color": "red",
-                                "value": null
-                            },
-                            {
-                                "color": "yellow",
-                                "value": 14
-                            },
-                            {
-                                "color": "green",
-                                "value": 30
-                            }
-                        ]
+                    "unit": "short",
+                    "custom": {
+                        "drawStyle": "line",
+                        "fillOpacity": 10
                     }
-                },
-                "overrides": [
-                    {
-                        "matcher": {
-                            "id": "byName",
-                            "options": "Value"
-                        },
-                        "properties": [
-                            {
-                                "id": "custom.displayMode",
-                                "value": "color-background"
-                            }
-                        ]
+                }
+            }
+        },
+        {
+            "type": "timeseries",
+            "title": "Service Retries",
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 12,
+                "y": 47
+            },
+            "id": 14,
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "targets": [
+                {
+                    "expr": "sum by (service) (rate(traefik_service_retries_total{job=\"traefik\", service=~\"$service\"}[5m])) > 0",
+                    "legendFormat": "{{service}}"
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "unit": "reqps",
+                    "custom": {
+                        "drawStyle": "bars",
+                        "fillOpacity": 50
                     }
-                ]
+                }
             }
         }
     ]

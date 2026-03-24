@@ -13,11 +13,13 @@ public class ConfigCommand implements Callable<Integer> {
         ConfigManager config = new ConfigManager();
         
         System.out.println("Current Configuration:");
-        System.out.println("  API URL: " + config.getApiUrl());
-        System.out.println("  Domain:  " + config.getDomain());
+        System.out.println("  API URL:        " + config.getApiUrl());
+        System.out.println("  Domain:         " + config.getDomain());
+        System.out.println("  Deploy Script:  " + config.getSshDeployScript());
+        System.out.println("  Remote Tmp:     " + config.getSshRemoteTmp());
         
         String token = config.getToken();
-        System.out.println("  Token:   " + (token != null && !token.isEmpty() ? "(set)" : "(not set)"));
+        System.out.println("  Token:          " + (token != null && !token.isEmpty() ? "(set)" : "(not set)"));
         
         return 0;
     }

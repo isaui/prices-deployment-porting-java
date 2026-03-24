@@ -15,11 +15,15 @@ public class ConfigManager {
     private static final String CONFIG_DIR = ".prices";
     private static final String CONFIG_FILE = "config.json";
 
-    public static final String DEFAULT_API_URL = "http://deploy.prices.cs.ui.ac.id";
+    public static final String DEFAULT_API_URL = "https://deploy.prices.cs.ui.ac.id";
     public static final String DEFAULT_DOMAIN = "prices.cs.ui.ac.id";
+    public static final String DEFAULT_SSH_DEPLOY_SCRIPT = "/home/admin/deployment/agent/deployment-scripts/deploy.sh";
+    public static final String DEFAULT_SSH_REMOTE_TMP = "/tmp";
 
     private static final String ENV_API_URL = "PRICES_API_URL";
     private static final String ENV_DOMAIN = "PRICES_DOMAIN";
+    private static final String ENV_SSH_DEPLOY_SCRIPT = "PRICES_SSH_DEPLOY_SCRIPT";
+    private static final String ENV_SSH_REMOTE_TMP = "PRICES_SSH_REMOTE_TMP";
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -29,6 +33,8 @@ public class ConfigManager {
         private String token;
         private String api_url;
         private String domain;
+        private String ssh_deploy_script;
+        private String ssh_remote_tmp;
     }
 
     private Path getConfigPath() {
@@ -112,6 +118,50 @@ public class ConfigManager {
     public void setDomain(String domain) throws IOException {
         Config config = loadConfig();
         config.setDomain(domain);
+        saveConfig(config);
+    }
+
+    public String getSshDeployScript() {
+        String envVal = System.getenv(ENV_SSH_DEPLOY_SCRIPT);
+        if (envVal != null && !envVal.isEmpty()) {
+            return envVal;
+        }
+        try {
+            Config config = loadConfig();
+            if (config.getSsh_deploy_script() != null && !config.getSsh_deploy_script().isEmpty()) {
+                return config.getSsh_deploy_script();
+            }
+        } catch (IOException e) {
+            // ignore
+        }
+        return DEFAULT_SSH_DEPLOY_SCRIPT;
+    }
+
+    public void setSshDeployScript(String script) throws IOException {
+        Config config = loadConfig();
+        config.setSsh_deploy_script(script);
+        saveConfig(config);
+    }
+
+    public String getSshRemoteTmp() {
+        String envVal = System.getenv(ENV_SSH_REMOTE_TMP);
+        if (envVal != null && !envVal.isEmpty()) {
+            return envVal;
+        }
+        try {
+            Config config = loadConfig();
+            if (config.getSsh_remote_tmp() != null && !config.getSsh_remote_tmp().isEmpty()) {
+                return config.getSsh_remote_tmp();
+            }
+        } catch (IOException e) {
+            // ignore
+        }
+        return DEFAULT_SSH_REMOTE_TMP;
+    }
+
+    public void setSshRemoteTmp(String tmp) throws IOException {
+        Config config = loadConfig();
+        config.setSsh_remote_tmp(tmp);
         saveConfig(config);
     }
 }

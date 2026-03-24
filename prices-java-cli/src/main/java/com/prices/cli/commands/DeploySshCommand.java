@@ -6,6 +6,8 @@ import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 import picocli.CommandLine.ParentCommand;
 
+import com.prices.cli.config.ConfigManager;
+
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -46,11 +48,14 @@ public class DeploySshCommand implements Callable<Integer> {
     @Option(names = {"-e", "--env"}, description = "Environment variables (KEY=VALUE)")
     private Map<String, String> envVars;
 
+    @Option(names = {"--deploy-script"}, description = "Remote deploy script path (default: from config)")
+    private String deployScript;
+
+    @Option(names = {"--remote-tmp"}, description = "Remote tmp directory (default: from config)")
+    private String remoteTmp;
+
     @Option(names = {"--dry-run"}, description = "Show what would be done")
     private boolean dryRun;
-
-    private static final String REMOTE_DEPLOY_SCRIPT = "/home/admin/deployment/agent/deployment-scripts/deploy.sh";
-    private static final String REMOTE_TMP = "/tmp";
 
     @Override
     public Integer call() throws Exception {
@@ -59,6 +64,10 @@ public class DeploySshCommand implements Callable<Integer> {
             System.err.println("Path does not exist: " + absPath);
             return 1;
         }
+
+        ConfigManager configManager = new ConfigManager();
+        String remoteDeployScript = deployScript != null ? deployScript : configManager.getSshDeployScript();
+        String remoteTmpDir = remoteTmp != null ? remoteTmp : configManager.getSshRemoteTmp();
 
         validateProject(absPath);
 
@@ -71,6 +80,8 @@ public class DeploySshCommand implements Callable<Integer> {
         if (backendUrl != null) System.out.println("  Backend URL: " + backendUrl);
         System.out.println("  Frontend Port: " + frontendPort);
         System.out.println("  Backend Port: " + backendPort);
+        System.out.println("  Deploy Script: " + remoteDeployScript);
+        System.out.println("  Remote Tmp: " + remoteTmpDir);
         if (dryRun) System.out.println("  Mode: DRY RUN");
         System.out.println();
 
@@ -79,7 +90,7 @@ public class DeploySshCommand implements Callable<Integer> {
         Path archivePath = ZipUtil.createProjectArchive(absPath);
         System.out.println("Archive: " + formatFileSize(Files.size(archivePath)));
 
-        String remoteArtifact = REMOTE_TMP + "/artifact-" + System.currentTimeMillis() + ".zip";
+        String remoteArtifact = remoteTmpDir + "/artifact-" + System.currentTimeMillis() + ".zip";
 
         try {
             // 2. SCP artifact to server
@@ -96,7 +107,7 @@ public class DeploySshCommand implements Callable<Integer> {
             }
 
             // 3. Execute deploy.sh
-            String deployCmd = buildDeployCommand(remoteArtifact);
+            String deployCmd = buildDeployCommand(remoteArtifact, remoteDeployScript);
             System.out.println("\nDeploying...");
             if (parent != null && parent.isVerbose()) {
                 System.out.println("$ ssh " + sshHost + " " + deployCmd);
@@ -128,9 +139,9 @@ public class DeploySshCommand implements Callable<Integer> {
         }
     }
 
-    private String buildDeployCommand(String remoteArtifact) {
+    private String buildDeployCommand(String remoteArtifact, String remoteDeployScript) {
         // Run deploy script directly - script uses echo for immediate output
-        StringBuilder cmd = new StringBuilder(REMOTE_DEPLOY_SCRIPT);
+        StringBuilder cmd = new StringBuilder(remoteDeployScript);
         cmd.append(" --project-name ").append(quote(projectName));
         cmd.append(" --artifact ").append(remoteArtifact);
         if (frontendUrl != null) cmd.append(" --frontend-url ").append(quote(frontendUrl));

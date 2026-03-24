@@ -88,3 +88,4 @@ grafana:
   service-account-token: ${GRAFANA_SERVICE_ACCOUNT_TOKEN:}
   dashboard-uid: app-tenant-monitoring
   token-expiry-hours: 24
+  public-base-url: ${PRICES_PROTOCOL:https}://deploy.${PRICES_DOMAIN:skripsi.isacitra.com}

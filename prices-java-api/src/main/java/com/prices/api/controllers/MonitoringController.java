@@ -37,13 +37,15 @@ public class MonitoringController {
     private final MonitoringService monitoringService;
     private final GrafanaConfig grafanaConfig;
     private HttpClient grafanaClient;
+    private HttpClient prometheusClient;
 
     @PostConstruct
     void init() {
         try {
             grafanaClient = HttpClient.create(URI.create(grafanaConfig.getUrl()).toURL());
+            prometheusClient = HttpClient.create(URI.create(grafanaConfig.getPrometheusUrl()).toURL());
         } catch (java.net.MalformedURLException e) {
-            throw new RuntimeException("Invalid Grafana URL: " + grafanaConfig.getUrl(), e);
+            throw new RuntimeException("Invalid Grafana/Prometheus URL", e);
         }
     }
 
@@ -168,27 +170,61 @@ public class MonitoringController {
             byte[] body = grafanaResp.body();
             io.micronaut.http.MediaType contentType = grafanaResp.getContentType().orElse(null);
 
-            // Inject CSS + JS into HTML to force kiosk mode and hide UI elements
+            // Inject CSS + JS into HTML to force kiosk mode, floating filter, enforce var-service
             if (contentType != null && contentType.toString().contains("text/html") && body != null) {
                 String html = new String(body);
-                String inject = "<style>"
+                String slug = token.getProjectSlug();
+                String injectHead = "<style>"
                         + "[aria-label=\"User profile\"],"
                         + "button[aria-label=\"Toggle top search bar\"],"
                         + "[aria-label=\"Help\"],"
                         + "[aria-label=\"News\"],"
                         + ".sidemenu { display: none !important; }"
-                        + "</style>"
+                        + "#prices-filter-bar{"
+                        + "position:fixed;top:0;left:0;right:0;z-index:99999;"
+                        + "background:#1e1e2f;padding:8px 16px;"
+                        + "display:flex;align-items:center;gap:12px;"
+                        + "font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;"
+                        + "font-size:13px;color:#ccc;border-bottom:1px solid #333;"
+                        + "box-shadow:0 2px 8px rgba(0,0,0,0.3);}"
+                        + "#prices-filter-bar label{color:#aaa;font-weight:500;}"
+                        + "#prices-filter-bar select{"
+                        + "background:#2a2a3d;color:#fff;border:1px solid #444;"
+                        + "border-radius:4px;padding:4px 8px;font-size:13px;cursor:pointer;}"
+                        + "#prices-filter-bar select:hover{border-color:#666;}"
+                        + ".react-grid-layout{margin-top:44px !important;}"
+                        + "</style>";
+                String injectBody = "<div id=\"prices-filter-bar\">"
+                        + "<label>Feature:</label>"
+                        + "<select id=\"prices-feature-select\"><option value=\".*\">All</option></select>"
+                        + "</div>"
                         + "<script>"
                         + "(function(){"
+                        // enforce kiosk + var-service
                         + "var u=new URL(window.location);"
+                        + "var changed=false;"
                         + "if(u.searchParams.get('kiosk')!=='1'){"
-                        + "u.searchParams.set('kiosk','1');"
-                        + "window.history.replaceState(null,'',u.toString());"
-                        + "window.location.reload();"
-                        + "}"
+                        + "u.searchParams.set('kiosk','1');changed=true;}"
+                        + "if(u.searchParams.get('var-service')!=='" + slug + "'){"
+                        + "u.searchParams.set('var-service','" + slug + "');changed=true;}"
+                        + "if(changed){window.history.replaceState(null,'',u.toString());window.location.reload();return;}"
+                        + "var sel=document.getElementById('prices-feature-select');"
+                        + "var cur=u.searchParams.get('var-feature')||'.*';"
+                        + "var features=" + fetchFeatures(slug) + ";"
+                        + "features.forEach(function(f){"
+                        + "var o=document.createElement('option');o.value=f;o.textContent=f;"
+                        + "if(f===cur)o.selected=true;"
+                        + "sel.appendChild(o);});"
+                        + "if(cur==='.*')sel.value='.*';"
+                        // on change: update var-feature and reload
+                        + "sel.addEventListener('change',function(){"
+                        + "var nu=new URL(window.location);"
+                        + "nu.searchParams.set('var-feature',sel.value);"
+                        + "window.location.href=nu.toString();});"
                         + "})();"
                         + "</script>";
-                html = html.replaceFirst("</head>", inject + "</head>");
+                html = html.replaceFirst("</head>", injectHead + "</head>");
+                html = html.replaceFirst("</body>", injectBody + "</body>");
                 body = html.getBytes();
             }
 
@@ -223,5 +259,33 @@ public class MonitoringController {
             return queryString.replaceAll(key + "=[^&]*", param);
         }
         return queryString + "&" + param;
+    }
+
+    private String fetchFeatures(String slug) {
+        try {
+            // Query Prometheus for all distinct feature label values for this job/slug
+            String query = "group by (feature) ({job=\"" + slug + "\", feature!=\"\"})";
+            String encoded = java.net.URLEncoder.encode(query, "UTF-8");
+            io.micronaut.http.HttpResponse<String> resp = prometheusClient.toBlocking()
+                    .exchange(HttpRequest.GET("/api/v1/query?query=" + encoded), String.class);
+            String body = resp.body();
+            if (body != null && body.contains("\"result\"")) {
+                // Parse feature values from result metrics
+                StringBuilder sb = new StringBuilder("[");
+                int idx = 0;
+                while ((idx = body.indexOf("\"feature\":\"", idx)) != -1) {
+                    int start = idx + 11;
+                    int end = body.indexOf("\"", start);
+                    if (sb.length() > 1) sb.append(",");
+                    sb.append("\"").append(body, start, end).append("\"");
+                    idx = end;
+                }
+                sb.append("]");
+                return sb.toString();
+            }
+        } catch (Exception e) {
+            log.warn("Failed to fetch features from Prometheus: {}", e.getMessage());
+        }
+        return "[]";
     }
 }

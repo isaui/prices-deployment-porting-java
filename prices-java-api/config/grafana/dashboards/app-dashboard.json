@@ -91,7 +91,7 @@
             },
             "targets": [
                 {
-                    "expr": "sum(increase(http_requests_total{job=~\"$service\", feature=~\"$feature\"}[5m])) by (http_route, http_method)",
+                    "expr": "round(sum(increase(http_requests_total{job=~\"$service\", feature=~\"$feature\"}[5m])) by (http_route, http_method))",
                     "legendFormat": "{{http_method}} {{http_route}}"
                 }
             ],
@@ -151,7 +151,7 @@
             },
             "targets": [
                 {
-                    "expr": "sum(increase(http_requests_total{job=~\"$service\", feature=~\"$feature\", http_status_code=~\"4..|5..\"}[5m])) by (http_route, http_status_code) > 0",
+                    "expr": "round(sum(increase(http_requests_total{job=~\"$service\", feature=~\"$feature\", http_status_code=~\"4..|5..\"}[5m])) by (http_route, http_status_code)) > 0",
                     "legendFormat": "{{http_status_code}} {{http_route}}"
                 }
             ],
@@ -193,7 +193,7 @@
             },
             "targets": [
                 {
-                    "expr": "sum(increase(method_calls_total{job=~\"$service\", feature=~\"$feature\"}[5m])) by (class, method)",
+                    "expr": "round(sum(increase(method_calls_total{job=~\"$service\", feature=~\"$feature\"}[5m])) by (class, method))",
                     "legendFormat": "{{class}}.{{method}}"
                 }
             ],
@@ -253,7 +253,7 @@
             },
             "targets": [
                 {
-                    "expr": "sum(increase(method_errors_total{job=~\"$service\", feature=~\"$feature\"}[5m])) by (class, method, exception) > 0",
+                    "expr": "round(sum(increase(method_errors_total{job=~\"$service\", feature=~\"$feature\"}[5m])) by (class, method, exception)) > 0",
                     "legendFormat": "{{class}}.{{method}} [{{exception}}]"
                 }
             ],
@@ -295,7 +295,7 @@
             },
             "targets": [
                 {
-                    "expr": "sum(increase(db_queries_total{job=~\"$service\", feature=~\"$feature\"}[5m])) by (db_operation, db_table)",
+                    "expr": "round(sum(increase(db_queries_total{job=~\"$service\", feature=~\"$feature\"}[5m])) by (db_operation, db_table))",
                     "legendFormat": "{{db_operation}} {{db_table}}"
                 }
             ],
@@ -355,7 +355,7 @@
             },
             "targets": [
                 {
-                    "expr": "sum(increase(db_query_errors_total{job=~\"$service\", feature=~\"$feature\"}[5m])) by (db_operation, db_table) > 0",
+                    "expr": "round(sum(increase(db_query_errors_total{job=~\"$service\", feature=~\"$feature\"}[5m])) by (db_operation, db_table)) > 0",
                     "legendFormat": "{{db_operation}} {{db_table}}"
                 }
             ],

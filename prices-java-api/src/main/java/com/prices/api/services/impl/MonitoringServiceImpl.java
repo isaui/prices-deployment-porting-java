@@ -42,7 +42,8 @@ public class MonitoringServiceImpl implements MonitoringService {
     @Override
     public String buildDashboardUrl(String tokenId) {
         verifyToken(tokenId);
-        return String.format("/grafana/d/%s?_t=%s",
+        return String.format("%s/grafana/d/%s?_t=%s",
+                grafanaConfig.getPublicBaseUrl(),
                 grafanaConfig.getDashboardUid(),
                 tokenId);
     }

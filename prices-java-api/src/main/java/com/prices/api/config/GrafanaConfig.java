@@ -10,4 +10,6 @@ public class GrafanaConfig {
     private String serviceAccountToken;
     private String dashboardUid = "app-deployment-monitoring";
     private int tokenExpiryHours = 24;
+    private String publicBaseUrl = "";
+    private String prometheusUrl = "http://prometheus:9090";
 }

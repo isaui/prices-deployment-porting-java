@@ -66,7 +66,28 @@ public class MonitoringController {
         return proxy(path, request);
     }
 
+    private static final java.util.regex.Pattern ALLOWED_PATH = java.util.regex.Pattern.compile(
+            "^(d/.*"                           // dashboard pages
+            + "|public/.*"                     // static assets (JS, CSS, fonts, images)
+            + "|react/.*"                      // React runtime modules
+            + "|api/ds/query"                  // datasource queries
+            + "|api/.*/resources/values"        // variable dropdown values
+            + "|api/annotations"               // annotations
+            + "|api/live/ws"                   // websocket
+            + "|api/frontend-metrics"          // frontend perf (harmless)
+            + "|api/ma/events"                 // analytics events (harmless)
+            + "|api/dashboards/uid/.*"         // dashboard JSON load
+            + "|api/plugins/.*"                // plugin assets
+            + "|api/prometheus/.*/api/v1/.*"   // prometheus alerting rules
+            + ")$"
+    );
+
     private HttpResponse<?> proxy(String path, HttpRequest<?> originalRequest) {
+        // Whitelist: only allow paths needed for dashboard viewing
+        if (!ALLOWED_PATH.matcher(path).matches()) {
+            return HttpResponse.notFound();
+        }
+
         // Resolve token from cookie
         io.micronaut.http.cookie.Cookie tokenCookie = originalRequest.getCookies().get(MON_TOKEN_COOKIE);
         String tokenId = tokenCookie != null ? tokenCookie.getValue() : null;
@@ -77,11 +98,12 @@ public class MonitoringController {
             try {
                 MonitoringToken token = monitoringService.verifyToken(paramToken);
 
-                // Build clean redirect URL: strip _t, inject var-service
+                // Build clean redirect URL: strip _t, inject var-service + kiosk=true
                 String redirectPath = "/grafana/" + path;
                 String query = stripParam(originalRequest.getUri().getRawQuery(), MON_TOKEN_PARAM);
                 if (path.startsWith("d/")) {
                     query = injectParam(query, "var-service", token.getProjectSlug());
+                    query = injectParam(query, "kiosk", "true");
                 }
                 if (query != null && !query.isEmpty()) {
                     redirectPath += "?" + query;
@@ -132,8 +154,27 @@ public class MonitoringController {
 
             io.micronaut.http.HttpResponse<byte[]> grafanaResp = grafanaClient.toBlocking().exchange(proxyReq, byte[].class);
 
-            MutableHttpResponse<byte[]> response = HttpResponse.status(grafanaResp.status()).body(grafanaResp.body());
-            grafanaResp.getContentType().ifPresent(response::contentType);
+            byte[] body = grafanaResp.body();
+            io.micronaut.http.MediaType contentType = grafanaResp.getContentType().orElse(null);
+
+            // Inject CSS into HTML to hide Grafana UI elements (profile, search, etc.)
+            if (contentType != null && contentType.toString().contains("text/html") && body != null) {
+                String html = new String(body);
+                String hideCSS = "<style>"
+                        + "[aria-label=\"User profile\"],"
+                        + "button[aria-label=\"Toggle top search bar\"],"
+                        + "[aria-label=\"Help\"],"
+                        + "[aria-label=\"News\"],"
+                        + ".sidemenu { display: none !important; }"
+                        + "</style>";
+                html = html.replaceFirst("</head>", hideCSS + "</head>");
+                body = html.getBytes();
+            }
+
+            MutableHttpResponse<byte[]> response = HttpResponse.status(grafanaResp.status()).body(body);
+            if (contentType != null) {
+                response.contentType(contentType);
+            }
 
             return response;
         } catch (Exception e) {

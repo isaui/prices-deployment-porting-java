@@ -11,6 +11,7 @@ import io.micronaut.http.MutableHttpRequest;
 import io.micronaut.http.MutableHttpResponse;
 import io.micronaut.http.annotation.*;
 import io.micronaut.http.client.HttpClient;
+import io.micronaut.http.client.exceptions.HttpClientResponseException;
 import io.micronaut.http.cookie.Cookie;
 import io.micronaut.scheduling.TaskExecutors;
 import io.micronaut.scheduling.annotation.ExecuteOn;
@@ -57,34 +58,31 @@ public class MonitoringController {
     @Get("/grafana/{+path}")
     @Secured(SecurityRule.IS_ANONYMOUS)
     public HttpResponse<?> proxyGet(@PathVariable String path, HttpRequest<?> request) {
-        return proxy(path, request);
+        return proxy(path, request, null);
     }
 
     @Post("/grafana/{+path}")
     @Secured(SecurityRule.IS_ANONYMOUS)
-    public HttpResponse<?> proxyPost(@PathVariable String path, HttpRequest<?> request) {
-        return proxy(path, request);
+    @Consumes(MediaType.ALL)
+    public HttpResponse<?> proxyPost(@PathVariable String path, HttpRequest<?> request, @Body byte[] rawBody) {
+        return proxy(path, request, rawBody);
     }
 
-    private static final java.util.regex.Pattern ALLOWED_PATH = java.util.regex.Pattern.compile(
-            "^(d/.*"                           // dashboard pages
-            + "|public/.*"                     // static assets (JS, CSS, fonts, images)
-            + "|react/.*"                      // React runtime modules
-            + "|api/ds/query"                  // datasource queries
-            + "|api/.*/resources/values"        // variable dropdown values
-            + "|api/annotations"               // annotations
-            + "|api/live/ws"                   // websocket
-            + "|api/frontend-metrics"          // frontend perf (harmless)
-            + "|api/ma/events"                 // analytics events (harmless)
-            + "|api/dashboards/uid/.*"         // dashboard JSON load
-            + "|api/plugins/.*"                // plugin assets
-            + "|api/prometheus/.*/api/v1/.*"   // prometheus alerting rules
+    private static final java.util.regex.Pattern BLOCKED_PATH = java.util.regex.Pattern.compile(
+            "^(api/user.*"                     // user profile, preferences
+            + "|api/org.*"                     // organization management
+            + "|api/admin.*"                   // admin endpoints
+            + "|api/auth.*"                    // auth endpoints
+            + "|api/serviceaccounts.*"         // service account management
+            + "|api/search"                    // dashboard search (exposes other dashboards)
+            + "|profile.*"                     // profile pages
+            + "|admin.*"                       // admin pages
             + ")$"
     );
 
-    private HttpResponse<?> proxy(String path, HttpRequest<?> originalRequest) {
-        // Whitelist: only allow paths needed for dashboard viewing
-        if (!ALLOWED_PATH.matcher(path).matches()) {
+    private HttpResponse<?> proxy(String path, HttpRequest<?> originalRequest, byte[] rawBody) {
+        // Block dangerous paths (profile, admin, user management, etc.)
+        if (BLOCKED_PATH.matcher(path).matches()) {
             return HttpResponse.notFound();
         }
 
@@ -103,7 +101,7 @@ public class MonitoringController {
                 String query = stripParam(originalRequest.getUri().getRawQuery(), MON_TOKEN_PARAM);
                 if (path.startsWith("d/")) {
                     query = injectParam(query, "var-service", token.getProjectSlug());
-                    query = injectParam(query, "kiosk", "true");
+                    query = injectParam(query, "kiosk", "1");
                 }
                 if (query != null && !query.isEmpty()) {
                     redirectPath += "?" + query;
@@ -126,8 +124,9 @@ public class MonitoringController {
         }
 
         // Verify cookie token
+        MonitoringToken token;
         try {
-            monitoringService.verifyToken(tokenId);
+            token = monitoringService.verifyToken(tokenId);
         } catch (Exception e) {
             return HttpResponse.unauthorized();
         }
@@ -135,13 +134,20 @@ public class MonitoringController {
         try {
             String grafanaPath = "/grafana/" + path;
             String queryString = originalRequest.getUri().getRawQuery();
+
+            // Force kiosk=1 and var-service on every dashboard page request
+            if (path.startsWith("d/")) {
+                queryString = injectParam(queryString, "var-service", token.getProjectSlug());
+                queryString = injectParam(queryString, "kiosk", "1");
+            }
+
             if (queryString != null && !queryString.isEmpty()) {
                 grafanaPath += "?" + queryString;
             }
 
             MutableHttpRequest<?> proxyReq;
-            if ("POST".equalsIgnoreCase(originalRequest.getMethodName())) {
-                proxyReq = HttpRequest.POST(grafanaPath, originalRequest.getBody().orElse(null))
+            if ("POST".equalsIgnoreCase(originalRequest.getMethodName()) && rawBody != null) {
+                proxyReq = HttpRequest.POST(grafanaPath, rawBody)
                         .contentType(originalRequest.getContentType().orElse(MediaType.APPLICATION_JSON_TYPE));
             } else {
                 proxyReq = HttpRequest.GET(grafanaPath);
@@ -152,22 +158,37 @@ public class MonitoringController {
                 proxyReq.header("Authorization", "Bearer " + saToken);
             }
 
-            io.micronaut.http.HttpResponse<byte[]> grafanaResp = grafanaClient.toBlocking().exchange(proxyReq, byte[].class);
+            io.micronaut.http.HttpResponse<byte[]> grafanaResp;
+            try {
+                grafanaResp = grafanaClient.toBlocking().exchange(proxyReq, byte[].class);
+            } catch (HttpClientResponseException ex) {
+                grafanaResp = (io.micronaut.http.HttpResponse<byte[]>) ex.getResponse();
+            }
 
             byte[] body = grafanaResp.body();
             io.micronaut.http.MediaType contentType = grafanaResp.getContentType().orElse(null);
 
-            // Inject CSS into HTML to hide Grafana UI elements (profile, search, etc.)
+            // Inject CSS + JS into HTML to force kiosk mode and hide UI elements
             if (contentType != null && contentType.toString().contains("text/html") && body != null) {
                 String html = new String(body);
-                String hideCSS = "<style>"
+                String inject = "<style>"
                         + "[aria-label=\"User profile\"],"
                         + "button[aria-label=\"Toggle top search bar\"],"
                         + "[aria-label=\"Help\"],"
                         + "[aria-label=\"News\"],"
                         + ".sidemenu { display: none !important; }"
-                        + "</style>";
-                html = html.replaceFirst("</head>", hideCSS + "</head>");
+                        + "</style>"
+                        + "<script>"
+                        + "(function(){"
+                        + "var u=new URL(window.location);"
+                        + "if(u.searchParams.get('kiosk')!=='1'){"
+                        + "u.searchParams.set('kiosk','1');"
+                        + "window.history.replaceState(null,'',u.toString());"
+                        + "window.location.reload();"
+                        + "}"
+                        + "})();"
+                        + "</script>";
+                html = html.replaceFirst("</head>", inject + "</head>");
                 body = html.getBytes();
             }
 

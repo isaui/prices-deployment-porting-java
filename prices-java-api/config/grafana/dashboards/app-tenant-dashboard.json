@@ -1,0 +1,561 @@
+{
+    "annotations": {
+        "list": []
+    },
+    "editable": false,
+    "graphTooltip": 1,
+    "schemaVersion": 39,
+    "tags": [
+        "monitoring",
+        "winvmj",
+        "tenant"
+    ],
+    "templating": {
+        "list": [
+            {
+                "current": {
+                    "selected": true,
+                    "text": "All",
+                    "value": "$__all"
+                },
+                "datasource": {
+                    "type": "prometheus",
+                    "uid": "prometheus"
+                },
+                "definition": "label_values({__name__=~\"http_requests_total|method_calls_total|db_queries_total\"}, job)",
+                "includeAll": true,
+                "multi": true,
+                "name": "service",
+                "query": {
+                    "query": "label_values({__name__=~\"http_requests_total|method_calls_total|db_queries_total\"}, job)"
+                },
+                "refresh": 2,
+                "type": "query",
+                "hide": 2
+            },
+            {
+                "current": {
+                    "selected": true,
+                    "text": "All",
+                    "value": "$__all"
+                },
+                "datasource": {
+                    "type": "prometheus",
+                    "uid": "prometheus"
+                },
+                "definition": "label_values({__name__=~\"http_requests_total|method_calls_total|db_queries_total\", job=~\"$service\"}, feature)",
+                "allValue": ".*",
+                "includeAll": true,
+                "multi": true,
+                "name": "feature",
+                "query": {
+                    "query": "label_values({__name__=~\"http_requests_total|method_calls_total|db_queries_total\", job=~\"$service\"}, feature)"
+                },
+                "refresh": 2,
+                "type": "query"
+            }
+        ]
+    },
+    "time": {
+        "from": "now-30m",
+        "to": "now"
+    },
+    "timezone": "browser",
+    "title": "App Monitoring",
+    "uid": "app-tenant-monitoring",
+    "panels": [
+        {
+            "type": "row",
+            "title": "HTTP Metrics",
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 0
+            },
+            "collapsed": false,
+            "id": 100
+        },
+        {
+            "type": "timeseries",
+            "title": "HTTP Request Count",
+            "gridPos": {
+                "h": 8,
+                "w": 8,
+                "x": 0,
+                "y": 1
+            },
+            "id": 1,
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "targets": [
+                {
+                    "expr": "sum(increase(http_requests_total{job=~\"$service\", feature=~\"$feature\"}[5m])) by (http_route, http_method)",
+                    "legendFormat": "{{http_method}} {{http_route}}"
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "unit": "short",
+                    "custom": {
+                        "drawStyle": "line",
+                        "fillOpacity": 10
+                    }
+                }
+            }
+        },
+        {
+            "type": "timeseries",
+            "title": "HTTP Request Duration",
+            "gridPos": {
+                "h": 8,
+                "w": 8,
+                "x": 8,
+                "y": 1
+            },
+            "id": 2,
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "targets": [
+                {
+                    "expr": "sum(increase(http_request_duration_ms_sum{job=~\"$service\", feature=~\"$feature\"}[5m])) by (http_route) / clamp_min(sum(increase(http_request_duration_ms_count{job=~\"$service\", feature=~\"$feature\"}[5m])) by (http_route), 1)",
+                    "legendFormat": "{{http_route}}"
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "unit": "ms",
+                    "custom": {
+                        "drawStyle": "line",
+                        "fillOpacity": 10
+                    }
+                }
+            }
+        },
+        {
+            "type": "timeseries",
+            "title": "HTTP Error Count",
+            "gridPos": {
+                "h": 8,
+                "w": 8,
+                "x": 16,
+                "y": 1
+            },
+            "id": 3,
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "targets": [
+                {
+                    "expr": "sum(increase(http_requests_total{job=~\"$service\", feature=~\"$feature\", http_status_code=~\"4..|5..\"}[5m])) by (http_route, http_status_code) > 0",
+                    "legendFormat": "{{http_status_code}} {{http_route}}"
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "unit": "short",
+                    "custom": {
+                        "drawStyle": "bars",
+                        "fillOpacity": 50
+                    }
+                }
+            }
+        },
+        {
+            "type": "row",
+            "title": "Method Metrics",
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 10
+            },
+            "collapsed": false,
+            "id": 101
+        },
+        {
+            "type": "timeseries",
+            "title": "Method Call Count",
+            "gridPos": {
+                "h": 8,
+                "w": 8,
+                "x": 0,
+                "y": 11
+            },
+            "id": 4,
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "targets": [
+                {
+                    "expr": "sum(increase(method_calls_total{job=~\"$service\", feature=~\"$feature\"}[5m])) by (class, method)",
+                    "legendFormat": "{{class}}.{{method}}"
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "unit": "short",
+                    "custom": {
+                        "drawStyle": "line",
+                        "fillOpacity": 10
+                    }
+                }
+            }
+        },
+        {
+            "type": "timeseries",
+            "title": "Method Duration",
+            "gridPos": {
+                "h": 8,
+                "w": 8,
+                "x": 8,
+                "y": 11
+            },
+            "id": 5,
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "targets": [
+                {
+                    "expr": "sum(increase(method_duration_ms_sum{job=~\"$service\", feature=~\"$feature\"}[5m])) by (class, method) / clamp_min(sum(increase(method_duration_ms_count{job=~\"$service\", feature=~\"$feature\"}[5m])) by (class, method), 1)",
+                    "legendFormat": "{{class}}.{{method}}"
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "unit": "ms",
+                    "custom": {
+                        "drawStyle": "line",
+                        "fillOpacity": 10
+                    }
+                }
+            }
+        },
+        {
+            "type": "timeseries",
+            "title": "Method Error Count",
+            "gridPos": {
+                "h": 8,
+                "w": 8,
+                "x": 16,
+                "y": 11
+            },
+            "id": 6,
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "targets": [
+                {
+                    "expr": "sum(increase(method_errors_total{job=~\"$service\", feature=~\"$feature\"}[5m])) by (class, method, exception) > 0",
+                    "legendFormat": "{{class}}.{{method}} [{{exception}}]"
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "unit": "short",
+                    "custom": {
+                        "drawStyle": "bars",
+                        "fillOpacity": 50
+                    }
+                }
+            }
+        },
+        {
+            "type": "row",
+            "title": "DB Metrics",
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 20
+            },
+            "collapsed": false,
+            "id": 102
+        },
+        {
+            "type": "timeseries",
+            "title": "DB Query Count",
+            "gridPos": {
+                "h": 8,
+                "w": 8,
+                "x": 0,
+                "y": 21
+            },
+            "id": 7,
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "targets": [
+                {
+                    "expr": "sum(increase(db_queries_total{job=~\"$service\", feature=~\"$feature\"}[5m])) by (db_operation, db_table)",
+                    "legendFormat": "{{db_operation}} {{db_table}}"
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "unit": "short",
+                    "custom": {
+                        "drawStyle": "line",
+                        "fillOpacity": 10
+                    }
+                }
+            }
+        },
+        {
+            "type": "timeseries",
+            "title": "DB Query Duration",
+            "gridPos": {
+                "h": 8,
+                "w": 8,
+                "x": 8,
+                "y": 21
+            },
+            "id": 8,
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "targets": [
+                {
+                    "expr": "sum(increase(db_query_duration_ms_sum{job=~\"$service\", feature=~\"$feature\"}[5m])) by (db_operation, db_table) / clamp_min(sum(increase(db_query_duration_ms_count{job=~\"$service\", feature=~\"$feature\"}[5m])) by (db_operation, db_table), 1)",
+                    "legendFormat": "{{db_operation}} {{db_table}}"
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "unit": "ms",
+                    "custom": {
+                        "drawStyle": "line",
+                        "fillOpacity": 10
+                    }
+                }
+            }
+        },
+        {
+            "type": "timeseries",
+            "title": "DB Query Error Count",
+            "gridPos": {
+                "h": 8,
+                "w": 8,
+                "x": 16,
+                "y": 21
+            },
+            "id": 9,
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "targets": [
+                {
+                    "expr": "sum(increase(db_query_errors_total{job=~\"$service\", feature=~\"$feature\"}[5m])) by (db_operation, db_table) > 0",
+                    "legendFormat": "{{db_operation}} {{db_table}}"
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "unit": "short",
+                    "custom": {
+                        "drawStyle": "bars",
+                        "fillOpacity": 50
+                    }
+                }
+            }
+        },
+        {
+            "type": "row",
+            "title": "JVM Metrics",
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 30
+            },
+            "collapsed": false,
+            "id": 103
+        },
+        {
+            "type": "timeseries",
+            "title": "JVM Heap Memory",
+            "gridPos": {
+                "h": 8,
+                "w": 8,
+                "x": 0,
+                "y": 31
+            },
+            "id": 10,
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "targets": [
+                {
+                    "expr": "sum(jvm_memory_used_bytes{job=~\"$service\", jvm_memory_type=\"heap\"}) by (jvm_memory_pool_name)",
+                    "legendFormat": "Used {{jvm_memory_pool_name}}"
+                },
+                {
+                    "expr": "sum(jvm_memory_committed_bytes{job=~\"$service\", jvm_memory_type=\"heap\"}) by (jvm_memory_pool_name)",
+                    "legendFormat": "Committed {{jvm_memory_pool_name}}"
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "unit": "bytes",
+                    "custom": {
+                        "drawStyle": "line",
+                        "fillOpacity": 10
+                    }
+                }
+            }
+        },
+        {
+            "type": "timeseries",
+            "title": "JVM GC Pause Duration",
+            "gridPos": {
+                "h": 8,
+                "w": 8,
+                "x": 8,
+                "y": 31
+            },
+            "id": 11,
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "targets": [
+                {
+                    "expr": "rate(jvm_gc_duration_seconds_sum{job=~\"$service\"}[5m]) / rate(jvm_gc_duration_seconds_count{job=~\"$service\"}[5m])",
+                    "legendFormat": "Avg GC pause {{jvm_gc_name}}"
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "unit": "s",
+                    "custom": {
+                        "drawStyle": "line",
+                        "fillOpacity": 10
+                    }
+                }
+            }
+        },
+        {
+            "type": "timeseries",
+            "title": "JVM Threads & CPU",
+            "gridPos": {
+                "h": 8,
+                "w": 8,
+                "x": 16,
+                "y": 31
+            },
+            "id": 12,
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "targets": [
+                {
+                    "expr": "sum(jvm_thread_count{job=~\"$service\"}) by (jvm_thread_state)",
+                    "legendFormat": "Threads {{jvm_thread_state}}"
+                },
+                {
+                    "expr": "jvm_cpu_recent_utilization_ratio{job=~\"$service\"}",
+                    "legendFormat": "CPU utilization"
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "custom": {
+                        "drawStyle": "line",
+                        "fillOpacity": 10
+                    }
+                }
+            }
+        },
+        {
+            "type": "row",
+            "title": "Logs (Loki)",
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 40
+            },
+            "collapsed": false,
+            "id": 104
+        },
+        {
+            "type": "logs",
+            "title": "Application Logs",
+            "gridPos": {
+                "h": 10,
+                "w": 24,
+                "x": 0,
+                "y": 41
+            },
+            "id": 13,
+            "datasource": {
+                "type": "loki",
+                "uid": "loki"
+            },
+            "targets": [
+                {
+                    "expr": "{service_name=~\"$service\"} |~ \"\\\\[$feature\\\\]\"",
+                    "refId": "A"
+                }
+            ],
+            "options": {
+                "showTime": true,
+                "showLabels": true,
+                "showCommonLabels": false,
+                "wrapLogMessage": true,
+                "prettifyLogMessage": false,
+                "enableLogDetails": true,
+                "sortOrder": "Descending"
+            }
+        },
+        {
+            "type": "row",
+            "title": "Traces (Tempo)",
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 52
+            },
+            "collapsed": false,
+            "id": 105
+        },
+        {
+            "type": "table",
+            "title": "Trace Search",
+            "gridPos": {
+                "h": 10,
+                "w": 24,
+                "x": 0,
+                "y": 53
+            },
+            "id": 14,
+            "datasource": {
+                "type": "tempo",
+                "uid": "tempo"
+            },
+            "targets": [
+                {
+                    "queryType": "traceql",
+                    "query": "{resource.service.name=~\"$service\" && span.feature=~\"$feature\"}",
+                    "tableType": "traces",
+                    "limit": 20,
+                    "refId": "A"
+                }
+            ]
+        }
+    ]
+}

@@ -14,4 +14,7 @@ public class Constants {
     public static final String INTERNAL_API_KEY_HEADER = "X-Internal-Api-Key";
     
     public static final String ROLE_ADMIN = "admin";
+
+    public static final String MON_TOKEN_COOKIE = "_mon_token";
+    public static final String MON_TOKEN_PARAM = "_t";
 }

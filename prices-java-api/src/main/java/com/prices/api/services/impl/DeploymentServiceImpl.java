@@ -124,11 +124,8 @@ public class DeploymentServiceImpl implements DeploymentService {
         updateDeploymentStatus(dep, DeploymentStatus.IN_PROGRESS, null);
 
         // Reuse existing log sink (created during enqueue)
-        Sinks.Many<String> logSink = logSinks.get(dep.getId());
-        if (logSink == null) {
-            logSink = Sinks.many().multicast().onBackpressureBuffer();
-            logSinks.put(dep.getId(), logSink);
-        }
+        final Sinks.Many<String> logSink = logSinks.computeIfAbsent(dep.getId(),
+                id -> Sinks.many().multicast().onBackpressureBuffer());
         logSink.tryEmitNext("Deployment started.");
 
         // Detect redeploy

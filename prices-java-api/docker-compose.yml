@@ -26,6 +26,8 @@ services:
       - ADMIN_EMAIL=${ADMIN_EMAIL}
       - ADMIN_PASSWORD=${ADMIN_PASSWORD}
       - INTERNAL_API_KEY=${INTERNAL_API_KEY}
+      - GRAFANA_URL=http://grafana:3000
+      - GRAFANA_SERVICE_ACCOUNT_TOKEN=${GRAFANA_SERVICE_ACCOUNT_TOKEN}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./docker-vol/deployments:/var/prices/deployments
@@ -197,6 +199,14 @@ services:
       - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin123}
       - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SECURITY_ALLOW_EMBEDDING=true
+      - GF_SERVICE_ACCOUNTS_ENABLED=true
+      - GF_SERVER_ROOT_URL=%(protocol)s://%(domain)s/grafana/
+      - GF_SERVER_SERVE_FROM_SUB_PATH=true
+      - GF_USERS_ALLOW_ORG_CREATE=false
+      - GF_AUTH_DISABLE_SIGNOUT_MENU=true
+      - GF_SECURITY_DISABLE_GRAVATAR=true
+      - GF_USERS_VIEWERS_CAN_EDIT=false
     volumes:
       - ./docker-vol/grafana:/var/lib/grafana
       - ./config/grafana/provisioning:/etc/grafana/provisioning:ro

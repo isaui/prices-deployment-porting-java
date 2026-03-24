@@ -319,6 +319,21 @@ public class Client {
         });
     }
 
+    public Map<String, Object> createMonitoringToken(String slug) throws IOException, InterruptedException {
+        Map<String, String> payload = new HashMap<>();
+        payload.put("slug", slug);
+        String body = objectMapper.writeValueAsString(payload);
+
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(baseUrl + "/api/monitoring/create-token"))
+                .header("Content-Type", "application/json")
+                .header("Authorization", "Bearer " + token)
+                .POST(HttpRequest.BodyPublishers.ofString(body))
+                .build();
+
+        return sendRequest(request, new TypeReference<ApiResponse<Map<String, Object>>>() {});
+    }
+
     public void setToken(String token) {
         this.token = token;
     }

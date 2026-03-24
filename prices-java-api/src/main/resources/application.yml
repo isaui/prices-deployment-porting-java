@@ -34,6 +34,12 @@ micronaut:
       - pattern: /api/internal/**
         access:
           - isAnonymous()
+      - pattern: /api/monitoring/token/**
+        access:
+          - isAnonymous()
+      - pattern: /grafana/**
+        access:
+          - isAnonymous()
     token:
       jwt:
         enabled: true
@@ -76,3 +82,9 @@ admin:
 
 internal:
   api-key: ${INTERNAL_API_KEY}
+
+grafana:
+  url: ${GRAFANA_URL:http://grafana:3000}
+  service-account-token: ${GRAFANA_SERVICE_ACCOUNT_TOKEN:}
+  dashboard-uid: app-tenant-monitoring
+  token-expiry-hours: 24

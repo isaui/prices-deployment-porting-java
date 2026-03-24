@@ -42,7 +42,10 @@ import java.io.IOException;
         
         // Env Vars
         EnvVarsCommand.class,
-        ConfigCommand.class
+        ConfigCommand.class,
+        
+        // Monitoring
+        MonitoringCommand.class
     }
 )
 public class PricesCommand implements Runnable {

@@ -220,11 +220,37 @@ services:
       - tempo
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.grafana.rule=Host(`grafana.${PRICES_DOMAIN:-skripsi.isacitra.com}`)"
-      - "traefik.http.routers.grafana.entrypoints=web,websecure"
-      - "traefik.http.middlewares.grafana-prefix.addprefix.prefix=/grafana"
-      - "traefik.http.routers.grafana.middlewares=grafana-prefix"
-      - "traefik.http.services.grafana.loadbalancer.server.port=3000"
+      - "traefik.enable=false"
+    restart: unless-stopped
+
+  grafana-admin:
+    image: grafana/grafana:11.2.4
+    container_name: prices-grafana-admin
+    user: "0"
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin123}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SECURITY_ALLOW_EMBEDDING=true
+      - GF_SERVICE_ACCOUNTS_ENABLED=true
+      - GF_USERS_ALLOW_ORG_CREATE=false
+      - GF_SECURITY_DISABLE_GRAVATAR=true
+    volumes:
+      - ./docker-vol/grafana-admin:/var/lib/grafana
+      - ./config/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./config/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    networks:
+      - prices-network
+      - prices-proxy-network
+    depends_on:
+      - prometheus
+      - loki
+      - tempo
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.grafana-admin.rule=Host(`grafana.${PRICES_DOMAIN:-skripsi.isacitra.com}`)"
+      - "traefik.http.routers.grafana-admin.entrypoints=web,websecure"
+      - "traefik.http.services.grafana-admin.loadbalancer.server.port=3000"
     restart: unless-stopped
 
   loki:

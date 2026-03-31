@@ -151,15 +151,6 @@ services:
       - prices-network
     restart: unless-stopped
 
-  docker-state-exporter:
-    image: karugaru/docker_state_exporter
-    container_name: prices-docker-state-exporter
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-    networks:
-      - prices-network
-    restart: unless-stopped
-
   otel-collector:
     image: otel/opentelemetry-collector-contrib:0.120.0
     container_name: prices-otel-collector

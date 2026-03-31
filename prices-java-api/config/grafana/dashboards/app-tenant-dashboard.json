@@ -77,11 +77,11 @@
             "id": 200
         },
         {
-            "type": "table",
-            "title": "Container Status",
+            "type": "bargauge",
+            "title": "Container Uptime",
             "gridPos": {
                 "h": 6,
-                "w": 8,
+                "w": 12,
                 "x": 0,
                 "y": 1
             },
@@ -92,185 +92,41 @@
             },
             "targets": [
                 {
-                    "expr": "container_state_status{name=~\".*$service.*\"}",
-                    "format": "table",
-                    "instant": true,
+                    "expr": "time() - docker_started_time{containerName=~\".*$service.*\"}",
+                    "legendFormat": "{{containerName}}",
                     "refId": "A"
                 }
             ],
-            "transformations": [
-                {
-                    "id": "organize",
-                    "options": {
-                        "excludeByName": {
-                            "Time": true,
-                            "__name__": true,
-                            "job": true,
-                            "instance": true
-                        },
-                        "renameByName": {
-                            "name": "Container",
-                            "status": "State",
-                            "Value": "Up"
-                        }
-                    }
-                }
-            ],
             "fieldConfig": {
-                "defaults": {},
-                "overrides": [
-                    {
-                        "matcher": {
-                            "id": "byName",
-                            "options": "State"
-                        },
-                        "properties": [
+                "defaults": {
+                    "unit": "s",
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
                             {
-                                "id": "mappings",
-                                "value": [
-                                    {
-                                        "type": "value",
-                                        "options": {
-                                            "running": {
-                                                "text": "RUNNING",
-                                                "color": "green"
-                                            }
-                                        }
-                                    },
-                                    {
-                                        "type": "value",
-                                        "options": {
-                                            "exited": {
-                                                "text": "EXITED",
-                                                "color": "red"
-                                            }
-                                        }
-                                    },
-                                    {
-                                        "type": "value",
-                                        "options": {
-                                            "paused": {
-                                                "text": "PAUSED",
-                                                "color": "yellow"
-                                            }
-                                        }
-                                    },
-                                    {
-                                        "type": "value",
-                                        "options": {
-                                            "created": {
-                                                "text": "CREATED",
-                                                "color": "blue"
-                                            }
-                                        }
-                                    },
-                                    {
-                                        "type": "value",
-                                        "options": {
-                                            "dead": {
-                                                "text": "DEAD",
-                                                "color": "red"
-                                            }
-                                        }
-                                    }
-                                ]
-                            },
-                            {
-                                "id": "custom.displayMode",
-                                "value": "color-background"
+                                "color": "green",
+                                "value": null
                             }
                         ]
                     }
-                ]
+                }
             },
             "options": {
-                "showHeader": true,
-                "sortBy": [
-                    {
-                        "displayName": "Container",
-                        "desc": false
-                    }
-                ]
-            }
-        },
-        {
-            "type": "table",
-            "title": "Container Restarts",
-            "gridPos": {
-                "h": 6,
-                "w": 4,
-                "x": 8,
-                "y": 1
-            },
-            "id": 202,
-            "datasource": {
-                "type": "prometheus",
-                "uid": "prometheus"
-            },
-            "targets": [
-                {
-                    "expr": "container_restartcount{name=~\".*$service.*\"}",
-                    "format": "table",
-                    "instant": true,
-                    "refId": "A"
-                }
-            ],
-            "transformations": [
-                {
-                    "id": "organize",
-                    "options": {
-                        "excludeByName": {
-                            "Time": true,
-                            "__name__": true,
-                            "job": true,
-                            "instance": true
-                        },
-                        "renameByName": {
-                            "name": "Container",
-                            "Value": "Restarts"
-                        }
-                    }
-                }
-            ],
-            "fieldConfig": {
-                "defaults": {},
-                "overrides": [
-                    {
-                        "matcher": {
-                            "id": "byName",
-                            "options": "Restarts"
-                        },
-                        "properties": [
-                            {
-                                "id": "thresholds",
-                                "value": {
-                                    "mode": "absolute",
-                                    "steps": [
-                                        {
-                                            "color": "green",
-                                            "value": null
-                                        },
-                                        {
-                                            "color": "yellow",
-                                            "value": 1
-                                        },
-                                        {
-                                            "color": "red",
-                                            "value": 5
-                                        }
-                                    ]
-                                }
-                            },
-                            {
-                                "id": "custom.displayMode",
-                                "value": "color-background"
-                            }
-                        ]
-                    }
-                ]
-            },
-            "options": {
-                "showHeader": true
+                "displayMode": "gradient",
+                "orientation": "horizontal",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "showUnfilled": true,
+                "minVizHeight": 16,
+                "minVizWidth": 8
             }
         },
         {

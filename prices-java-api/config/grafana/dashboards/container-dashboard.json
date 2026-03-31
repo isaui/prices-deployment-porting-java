@@ -53,259 +53,17 @@
     "panels": [
         {
             "type": "row",
-            "title": "Container State",
-            "gridPos": {
-                "h": 1,
-                "w": 24,
-                "x": 0,
-                "y": 0
-            },
-            "collapsed": false,
-            "id": 200
-        },
-        {
-            "type": "table",
-            "title": "Container Status",
-            "gridPos": {
-                "h": 8,
-                "w": 12,
-                "x": 0,
-                "y": 1
-            },
-            "id": 201,
-            "datasource": {
-                "type": "prometheus",
-                "uid": "prometheus"
-            },
-            "targets": [
-                {
-                    "expr": "container_state_status{name=~\"$ContainerName\"}",
-                    "legendFormat": "{{name}}",
-                    "format": "table",
-                    "instant": true,
-                    "refId": "A"
-                }
-            ],
-            "transformations": [
-                {
-                    "id": "organize",
-                    "options": {
-                        "excludeByName": {
-                            "Time": true,
-                            "__name__": true,
-                            "job": true,
-                            "instance": true
-                        },
-                        "renameByName": {
-                            "name": "Container",
-                            "status": "State",
-                            "Value": "Running"
-                        }
-                    }
-                }
-            ],
-            "fieldConfig": {
-                "defaults": {},
-                "overrides": [
-                    {
-                        "matcher": {
-                            "id": "byName",
-                            "options": "State"
-                        },
-                        "properties": [
-                            {
-                                "id": "mappings",
-                                "value": [
-                                    {
-                                        "type": "value",
-                                        "options": {
-                                            "running": {
-                                                "text": "RUNNING",
-                                                "color": "green"
-                                            }
-                                        }
-                                    },
-                                    {
-                                        "type": "value",
-                                        "options": {
-                                            "exited": {
-                                                "text": "EXITED",
-                                                "color": "red"
-                                            }
-                                        }
-                                    },
-                                    {
-                                        "type": "value",
-                                        "options": {
-                                            "paused": {
-                                                "text": "PAUSED",
-                                                "color": "yellow"
-                                            }
-                                        }
-                                    },
-                                    {
-                                        "type": "value",
-                                        "options": {
-                                            "created": {
-                                                "text": "CREATED",
-                                                "color": "blue"
-                                            }
-                                        }
-                                    },
-                                    {
-                                        "type": "value",
-                                        "options": {
-                                            "dead": {
-                                                "text": "DEAD",
-                                                "color": "red"
-                                            }
-                                        }
-                                    }
-                                ]
-                            },
-                            {
-                                "id": "custom.displayMode",
-                                "value": "color-background"
-                            }
-                        ]
-                    }
-                ]
-            },
-            "options": {
-                "showHeader": true,
-                "sortBy": [
-                    {
-                        "displayName": "Container",
-                        "desc": false
-                    }
-                ]
-            }
-        },
-        {
-            "type": "table",
-            "title": "Health & Restarts",
-            "gridPos": {
-                "h": 8,
-                "w": 12,
-                "x": 12,
-                "y": 1
-            },
-            "id": 202,
-            "datasource": {
-                "type": "prometheus",
-                "uid": "prometheus"
-            },
-            "targets": [
-                {
-                    "expr": "container_restartcount{name=~\"$ContainerName\"}",
-                    "legendFormat": "{{name}}",
-                    "format": "table",
-                    "instant": true,
-                    "refId": "A"
-                },
-                {
-                    "expr": "container_state_health_status{name=~\"$ContainerName\"}",
-                    "legendFormat": "{{name}}",
-                    "format": "table",
-                    "instant": true,
-                    "refId": "B"
-                }
-            ],
-            "transformations": [
-                {
-                    "id": "merge",
-                    "options": {}
-                },
-                {
-                    "id": "organize",
-                    "options": {
-                        "excludeByName": {
-                            "Time": true,
-                            "__name__": true,
-                            "job": true,
-                            "instance": true
-                        },
-                        "renameByName": {
-                            "name": "Container",
-                            "Value #A": "Restarts",
-                            "Value #B": "Health"
-                        }
-                    }
-                }
-            ],
-            "fieldConfig": {
-                "defaults": {},
-                "overrides": [
-                    {
-                        "matcher": {
-                            "id": "byName",
-                            "options": "Restarts"
-                        },
-                        "properties": [
-                            {
-                                "id": "thresholds",
-                                "value": {
-                                    "mode": "absolute",
-                                    "steps": [
-                                        {
-                                            "color": "green",
-                                            "value": null
-                                        },
-                                        {
-                                            "color": "yellow",
-                                            "value": 1
-                                        },
-                                        {
-                                            "color": "red",
-                                            "value": 5
-                                        }
-                                    ]
-                                }
-                            },
-                            {
-                                "id": "custom.displayMode",
-                                "value": "color-background"
-                            }
-                        ]
-                    }
-                ]
-            },
-            "options": {
-                "showHeader": true,
-                "sortBy": [
-                    {
-                        "displayName": "Restarts",
-                        "desc": true
-                    }
-                ]
-            }
-        },
-        {
-            "type": "row",
             "title": "Basic Metrics",
-            "gridPos": {
-                "h": 1,
-                "w": 24,
-                "x": 0,
-                "y": 10
-            },
+            "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
             "collapsed": false,
             "id": 100
         },
         {
             "type": "bargauge",
             "title": "Uptime Containers",
-            "gridPos": {
-                "h": 12,
-                "w": 6,
-                "x": 0,
-                "y": 1
-            },
+            "gridPos": { "h": 12, "w": 6, "x": 0, "y": 1 },
             "id": 1,
-            "datasource": {
-                "type": "prometheus",
-                "uid": "prometheus"
-            },
+            "datasource": { "type": "prometheus", "uid": "prometheus" },
             "targets": [
                 {
                     "expr": "time() - docker_started_time{containerName=~\"$ContainerName\", hostname=~\"$HostName\"}",
@@ -315,18 +73,11 @@
             ],
             "fieldConfig": {
                 "defaults": {
-                    "color": {
-                        "mode": "thresholds"
-                    },
+                    "color": { "mode": "thresholds" },
                     "mappings": [],
                     "thresholds": {
                         "mode": "absolute",
-                        "steps": [
-                            {
-                                "color": "green",
-                                "value": null
-                            }
-                        ]
+                        "steps": [{ "color": "green", "value": null }]
                     },
                     "unit": "s"
                 },
@@ -336,9 +87,7 @@
                 "displayMode": "gradient",
                 "orientation": "horizontal",
                 "reduceOptions": {
-                    "calcs": [
-                        "lastNotNull"
-                    ],
+                    "calcs": ["lastNotNull"],
                     "fields": "",
                     "values": false
                 },
@@ -350,17 +99,9 @@
         {
             "type": "stat",
             "title": "Running Containers",
-            "gridPos": {
-                "h": 4,
-                "w": 3,
-                "x": 6,
-                "y": 1
-            },
+            "gridPos": { "h": 4, "w": 3, "x": 6, "y": 1 },
             "id": 2,
-            "datasource": {
-                "type": "prometheus",
-                "uid": "prometheus"
-            },
+            "datasource": { "type": "prometheus", "uid": "prometheus" },
             "targets": [
                 {
                     "expr": "sum(docker_containers_up_count{hostname=~\"$HostName\"})",
@@ -370,18 +111,11 @@
             ],
             "fieldConfig": {
                 "defaults": {
-                    "color": {
-                        "mode": "palette-classic"
-                    },
+                    "color": { "mode": "palette-classic" },
                     "mappings": [],
                     "thresholds": {
                         "mode": "absolute",
-                        "steps": [
-                            {
-                                "color": "green",
-                                "value": null
-                            }
-                        ]
+                        "steps": [{ "color": "green", "value": null }]
                     }
                 },
                 "overrides": []
@@ -389,30 +123,16 @@
             "options": {
                 "colorMode": "value",
                 "graphMode": "none",
-                "reduceOptions": {
-                    "calcs": [
-                        "lastNotNull"
-                    ],
-                    "fields": "",
-                    "values": false
-                },
+                "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
                 "textMode": "auto"
             }
         },
         {
             "type": "stat",
             "title": "Stopped Containers",
-            "gridPos": {
-                "h": 4,
-                "w": 3,
-                "x": 9,
-                "y": 1
-            },
+            "gridPos": { "h": 4, "w": 3, "x": 9, "y": 1 },
             "id": 3,
-            "datasource": {
-                "type": "prometheus",
-                "uid": "prometheus"
-            },
+            "datasource": { "type": "prometheus", "uid": "prometheus" },
             "targets": [
                 {
                     "expr": "sum(docker_containers_down_count{hostname=~\"$HostName\"})",
@@ -422,18 +142,11 @@
             ],
             "fieldConfig": {
                 "defaults": {
-                    "color": {
-                        "mode": "continuous-RdYlGr"
-                    },
+                    "color": { "mode": "continuous-RdYlGr" },
                     "mappings": [],
                     "thresholds": {
                         "mode": "absolute",
-                        "steps": [
-                            {
-                                "color": "green",
-                                "value": null
-                            }
-                        ]
+                        "steps": [{ "color": "green", "value": null }]
                     }
                 },
                 "overrides": []
@@ -441,30 +154,16 @@
             "options": {
                 "colorMode": "value",
                 "graphMode": "none",
-                "reduceOptions": {
-                    "calcs": [
-                        "lastNotNull"
-                    ],
-                    "fields": "",
-                    "values": false
-                },
+                "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
                 "textMode": "auto"
             }
         },
         {
             "type": "stat",
             "title": "CPU Total Usage",
-            "gridPos": {
-                "h": 4,
-                "w": 3,
-                "x": 6,
-                "y": 5
-            },
+            "gridPos": { "h": 4, "w": 3, "x": 6, "y": 5 },
             "id": 4,
-            "datasource": {
-                "type": "prometheus",
-                "uid": "prometheus"
-            },
+            "datasource": { "type": "prometheus", "uid": "prometheus" },
             "targets": [
                 {
                     "expr": "sum(rate(docker_cpu_usage_total{hostname=~\"$HostName\"}[$__rate_interval]))",
@@ -474,17 +173,10 @@
             ],
             "fieldConfig": {
                 "defaults": {
-                    "color": {
-                        "mode": "thresholds"
-                    },
+                    "color": { "mode": "thresholds" },
                     "thresholds": {
                         "mode": "absolute",
-                        "steps": [
-                            {
-                                "color": "green",
-                                "value": null
-                            }
-                        ]
+                        "steps": [{ "color": "green", "value": null }]
                     },
                     "unit": "percentunit"
                 },
@@ -493,30 +185,16 @@
             "options": {
                 "colorMode": "value",
                 "graphMode": "area",
-                "reduceOptions": {
-                    "calcs": [
-                        "lastNotNull"
-                    ],
-                    "fields": "",
-                    "values": false
-                },
+                "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
                 "textMode": "auto"
             }
         },
         {
             "type": "stat",
             "title": "Memory Usage",
-            "gridPos": {
-                "h": 4,
-                "w": 3,
-                "x": 9,
-                "y": 5
-            },
+            "gridPos": { "h": 4, "w": 3, "x": 9, "y": 5 },
             "id": 5,
-            "datasource": {
-                "type": "prometheus",
-                "uid": "prometheus"
-            },
+            "datasource": { "type": "prometheus", "uid": "prometheus" },
             "targets": [
                 {
                     "expr": "sum(docker_memory_usage{hostname=~\"$HostName\"})",
@@ -526,17 +204,10 @@
             ],
             "fieldConfig": {
                 "defaults": {
-                    "color": {
-                        "mode": "thresholds"
-                    },
+                    "color": { "mode": "thresholds" },
                     "thresholds": {
                         "mode": "absolute",
-                        "steps": [
-                            {
-                                "color": "green",
-                                "value": null
-                            }
-                        ]
+                        "steps": [{ "color": "green", "value": null }]
                     },
                     "unit": "decbytes"
                 },
@@ -545,30 +216,16 @@
             "options": {
                 "colorMode": "value",
                 "graphMode": "area",
-                "reduceOptions": {
-                    "calcs": [
-                        "lastNotNull"
-                    ],
-                    "fields": "",
-                    "values": false
-                },
+                "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
                 "textMode": "auto"
             }
         },
         {
             "type": "stat",
             "title": "Network",
-            "gridPos": {
-                "h": 4,
-                "w": 3,
-                "x": 6,
-                "y": 9
-            },
+            "gridPos": { "h": 4, "w": 3, "x": 6, "y": 9 },
             "id": 6,
-            "datasource": {
-                "type": "prometheus",
-                "uid": "prometheus"
-            },
+            "datasource": { "type": "prometheus", "uid": "prometheus" },
             "targets": [
                 {
                     "expr": "sum(rate(docker_network_received_bytes{hostname=~\"$HostName\"}[1m]))",
@@ -583,17 +240,10 @@
             ],
             "fieldConfig": {
                 "defaults": {
-                    "color": {
-                        "mode": "palette-classic"
-                    },
+                    "color": { "mode": "palette-classic" },
                     "thresholds": {
                         "mode": "absolute",
-                        "steps": [
-                            {
-                                "color": "green",
-                                "value": null
-                            }
-                        ]
+                        "steps": [{ "color": "green", "value": null }]
                     },
                     "unit": "Bps"
                 },
@@ -603,30 +253,16 @@
                 "colorMode": "value",
                 "graphMode": "none",
                 "orientation": "horizontal",
-                "reduceOptions": {
-                    "calcs": [
-                        "lastNotNull"
-                    ],
-                    "fields": "",
-                    "values": false
-                },
+                "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
                 "textMode": "auto"
             }
         },
         {
             "type": "stat",
             "title": "Disk IOps",
-            "gridPos": {
-                "h": 4,
-                "w": 3,
-                "x": 9,
-                "y": 9
-            },
+            "gridPos": { "h": 4, "w": 3, "x": 9, "y": 9 },
             "id": 7,
-            "datasource": {
-                "type": "prometheus",
-                "uid": "prometheus"
-            },
+            "datasource": { "type": "prometheus", "uid": "prometheus" },
             "targets": [
                 {
                     "expr": "sum(rate(docker_io_read_bytes{hostname=~\"$HostName\"}[1m]))",
@@ -641,17 +277,10 @@
             ],
             "fieldConfig": {
                 "defaults": {
-                    "color": {
-                        "mode": "palette-classic"
-                    },
+                    "color": { "mode": "palette-classic" },
                     "thresholds": {
                         "mode": "absolute",
-                        "steps": [
-                            {
-                                "color": "green",
-                                "value": null
-                            }
-                        ]
+                        "steps": [{ "color": "green", "value": null }]
                     },
                     "unit": "Bps"
                 },
@@ -661,13 +290,7 @@
                 "colorMode": "value",
                 "graphMode": "none",
                 "orientation": "horizontal",
-                "reduceOptions": {
-                    "calcs": [
-                        "lastNotNull"
-                    ],
-                    "fields": "",
-                    "values": false
-                },
+                "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
                 "textMode": "auto"
             }
         },
@@ -675,17 +298,9 @@
             "type": "timeseries",
             "title": "CPU Total Usage",
             "description": "User + Kernel = Total",
-            "gridPos": {
-                "h": 12,
-                "w": 12,
-                "x": 12,
-                "y": 1
-            },
+            "gridPos": { "h": 12, "w": 12, "x": 12, "y": 1 },
             "id": 8,
-            "datasource": {
-                "type": "prometheus",
-                "uid": "prometheus"
-            },
+            "datasource": { "type": "prometheus", "uid": "prometheus" },
             "targets": [
                 {
                     "expr": "rate(docker_cpu_usage_total{containerName=~\"$ContainerName\", hostname=~\"$HostName\"}[$__rate_interval])",
@@ -695,9 +310,7 @@
             ],
             "fieldConfig": {
                 "defaults": {
-                    "color": {
-                        "mode": "palette-classic"
-                    },
+                    "color": { "mode": "palette-classic" },
                     "custom": {
                         "drawStyle": "line",
                         "fillOpacity": 5,
@@ -710,14 +323,8 @@
                     "thresholds": {
                         "mode": "absolute",
                         "steps": [
-                            {
-                                "color": "green",
-                                "value": null
-                            },
-                            {
-                                "color": "red",
-                                "value": 80
-                            }
+                            { "color": "green", "value": null },
+                            { "color": "red", "value": 80 }
                         ]
                     }
                 },
@@ -725,38 +332,22 @@
             },
             "options": {
                 "legend": {
-                    "calcs": [
-                        "lastNotNull",
-                        "min",
-                        "max",
-                        "mean"
-                    ],
+                    "calcs": ["lastNotNull", "min", "max", "mean"],
                     "displayMode": "table",
                     "placement": "right",
                     "showLegend": true,
                     "sortBy": "Max",
                     "sortDesc": true
                 },
-                "tooltip": {
-                    "mode": "single",
-                    "sort": "none"
-                }
+                "tooltip": { "mode": "single", "sort": "none" }
             }
         },
         {
             "type": "timeseries",
             "title": "Memory Usage (MByte)",
-            "gridPos": {
-                "h": 12,
-                "w": 24,
-                "x": 0,
-                "y": 13
-            },
+            "gridPos": { "h": 12, "w": 24, "x": 0, "y": 13 },
             "id": 9,
-            "datasource": {
-                "type": "prometheus",
-                "uid": "prometheus"
-            },
+            "datasource": { "type": "prometheus", "uid": "prometheus" },
             "targets": [
                 {
                     "expr": "docker_memory_usage{containerName=~\"$ContainerName\", hostname=~\"$HostName\"}",
@@ -766,9 +357,7 @@
             ],
             "fieldConfig": {
                 "defaults": {
-                    "color": {
-                        "mode": "palette-classic"
-                    },
+                    "color": { "mode": "palette-classic" },
                     "custom": {
                         "drawStyle": "line",
                         "fillOpacity": 5,
@@ -781,14 +370,8 @@
                     "thresholds": {
                         "mode": "absolute",
                         "steps": [
-                            {
-                                "color": "green",
-                                "value": null
-                            },
-                            {
-                                "color": "red",
-                                "value": 80
-                            }
+                            { "color": "green", "value": null },
+                            { "color": "red", "value": 80 }
                         ]
                     }
                 },
@@ -796,39 +379,23 @@
             },
             "options": {
                 "legend": {
-                    "calcs": [
-                        "lastNotNull",
-                        "min",
-                        "max",
-                        "mean"
-                    ],
+                    "calcs": ["lastNotNull", "min", "max", "mean"],
                     "displayMode": "table",
                     "placement": "bottom",
                     "showLegend": true,
                     "sortBy": "Last *",
                     "sortDesc": true
                 },
-                "tooltip": {
-                    "mode": "single",
-                    "sort": "none"
-                }
+                "tooltip": { "mode": "single", "sort": "none" }
             }
         },
         {
             "type": "timeseries",
             "title": "Network I/O",
             "description": "Network received and transmitted bytes per container",
-            "gridPos": {
-                "h": 12,
-                "w": 12,
-                "x": 0,
-                "y": 25
-            },
+            "gridPos": { "h": 12, "w": 12, "x": 0, "y": 25 },
             "id": 12,
-            "datasource": {
-                "type": "prometheus",
-                "uid": "prometheus"
-            },
+            "datasource": { "type": "prometheus", "uid": "prometheus" },
             "targets": [
                 {
                     "expr": "rate(docker_network_received_bytes{containerName=~\"$ContainerName\", hostname=~\"$HostName\"}[$__rate_interval])",
@@ -843,9 +410,7 @@
             ],
             "fieldConfig": {
                 "defaults": {
-                    "color": {
-                        "mode": "palette-classic"
-                    },
+                    "color": { "mode": "palette-classic" },
                     "custom": {
                         "drawStyle": "line",
                         "fillOpacity": 10,
@@ -858,14 +423,8 @@
                     "thresholds": {
                         "mode": "absolute",
                         "steps": [
-                            {
-                                "color": "green",
-                                "value": null
-                            },
-                            {
-                                "color": "red",
-                                "value": 80
-                            }
+                            { "color": "green", "value": null },
+                            { "color": "red", "value": 80 }
                         ]
                     }
                 },
@@ -873,35 +432,21 @@
             },
             "options": {
                 "legend": {
-                    "calcs": [
-                        "lastNotNull",
-                        "mean"
-                    ],
+                    "calcs": ["lastNotNull", "mean"],
                     "displayMode": "table",
                     "placement": "bottom",
                     "showLegend": true
                 },
-                "tooltip": {
-                    "mode": "multi",
-                    "sort": "desc"
-                }
+                "tooltip": { "mode": "multi", "sort": "desc" }
             }
         },
         {
             "type": "timeseries",
             "title": "Disk I/O",
             "description": "Disk read and write bytes per container",
-            "gridPos": {
-                "h": 12,
-                "w": 12,
-                "x": 12,
-                "y": 25
-            },
+            "gridPos": { "h": 12, "w": 12, "x": 12, "y": 25 },
             "id": 13,
-            "datasource": {
-                "type": "prometheus",
-                "uid": "prometheus"
-            },
+            "datasource": { "type": "prometheus", "uid": "prometheus" },
             "targets": [
                 {
                     "expr": "rate(docker_io_read_bytes{containerName=~\"$ContainerName\", hostname=~\"$HostName\"}[$__rate_interval])",
@@ -916,9 +461,7 @@
             ],
             "fieldConfig": {
                 "defaults": {
-                    "color": {
-                        "mode": "palette-classic"
-                    },
+                    "color": { "mode": "palette-classic" },
                     "custom": {
                         "drawStyle": "line",
                         "fillOpacity": 10,
@@ -931,14 +474,8 @@
                     "thresholds": {
                         "mode": "absolute",
                         "steps": [
-                            {
-                                "color": "green",
-                                "value": null
-                            },
-                            {
-                                "color": "red",
-                                "value": 80
-                            }
+                            { "color": "green", "value": null },
+                            { "color": "red", "value": 80 }
                         ]
                     }
                 },
@@ -946,18 +483,12 @@
             },
             "options": {
                 "legend": {
-                    "calcs": [
-                        "lastNotNull",
-                        "mean"
-                    ],
+                    "calcs": ["lastNotNull", "mean"],
                     "displayMode": "table",
                     "placement": "bottom",
                     "showLegend": true
                 },
-                "tooltip": {
-                    "mode": "multi",
-                    "sort": "desc"
-                }
+                "tooltip": { "mode": "multi", "sort": "desc" }
             }
         }
     ]

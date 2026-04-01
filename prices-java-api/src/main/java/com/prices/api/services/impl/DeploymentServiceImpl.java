@@ -6,6 +6,8 @@ import com.prices.api.dto.requests.DeployRequest;
 import com.prices.api.models.DeploymentHistory;
 import com.prices.api.models.DeploymentStatus;
 import com.prices.api.models.Project;
+import com.prices.api.models.MonitoringConfiguration;
+import com.prices.api.repositories.MonitoringConfigurationRepository;
 import com.prices.api.repositories.DeploymentHistoryRepository;
 import com.prices.api.repositories.ProjectRepository;
 import com.prices.api.services.DeploymentService;
@@ -37,6 +39,7 @@ public class DeploymentServiceImpl implements DeploymentService {
 
     private final DeploymentHistoryRepository deploymentRepo;
     private final ProjectRepository projectRepo;
+    private final MonitoringConfigurationRepository monitoringConfigRepo;
     private final DockerConfig dockerConfig;
     private final DatabaseConfig databaseConfig;
     private final DeploymentQueue deploymentQueue;
@@ -149,6 +152,7 @@ public class DeploymentServiceImpl implements DeploymentService {
                         databaseConfig.getPricesPassword()
                 ),
                 new EnvStage(),
+                new ParseMonitoringConfigStage(),
                 new PrepareDistStage(),
                 new PrepareComposeStage(),
                 new DockerRunStage(dockerConfig.getDockerComposeCmd()),
@@ -161,6 +165,9 @@ public class DeploymentServiceImpl implements DeploymentService {
 
             // Success
             updateDeploymentStatus(dep, DeploymentStatus.SUCCESS, String.join("\n", ctx.getLogs()));
+
+            // Upsert monitoring configuration from monitoring.properties
+            upsertMonitoringConfig(ctx, project);
 
             // Update project status
             project.setStatus("active");
@@ -201,6 +208,36 @@ public class DeploymentServiceImpl implements DeploymentService {
             }
         } catch (Exception e) {
             log.error("Failed to update deployment status", e);
+        }
+    }
+
+    private void upsertMonitoringConfig(DeploymentContext ctx, Project project) {
+        try {
+            if (ctx.getMonitoringEnabled() == null) {
+                log.debug("No monitoring config parsed for {}", ctx.getProjectSlug());
+                return;
+            }
+
+            boolean enabled = ctx.getMonitoringEnabled();
+            List<String> features = ctx.getMonitoringFeatures() != null ? ctx.getMonitoringFeatures() : List.of();
+
+            Optional<MonitoringConfiguration> existing = monitoringConfigRepo.findByProjectId(project.getId());
+            if (existing.isPresent()) {
+                MonitoringConfiguration config = existing.get();
+                config.setEnabled(enabled);
+                config.setFeatures(features);
+                monitoringConfigRepo.update(config);
+            } else {
+                MonitoringConfiguration config = new MonitoringConfiguration();
+                config.setProjectId(project.getId());
+                config.setEnabled(enabled);
+                config.setFeatures(features);
+                monitoringConfigRepo.save(config);
+            }
+
+            log.info("Upserted monitoring config for {}: enabled={}, features={}", ctx.getProjectSlug(), enabled, features);
+        } catch (Exception e) {
+            log.warn("Failed to upsert monitoring config for {}: {}", ctx.getProjectSlug(), e.getMessage());
         }
     }
 }

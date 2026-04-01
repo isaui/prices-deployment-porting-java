@@ -21,6 +21,8 @@ public interface ProjectRepository extends CrudRepository<Project, Long> {
     @Join(value = "user", type = Join.Type.LEFT_FETCH)
     Optional<Project> findBySlug(String slug);
 
+    List<Project> findBySlugIn(List<String> slugs);
+
     @Join(value = "user", type = Join.Type.LEFT_FETCH)
     List<Project> findAll();
 }

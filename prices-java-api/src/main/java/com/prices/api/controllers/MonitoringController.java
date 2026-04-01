@@ -1,8 +1,12 @@
 package com.prices.api.controllers;
 
 import com.prices.api.config.GrafanaConfig;
+import com.prices.api.handlers.MonitoringConfigurationHandler;
 import com.prices.api.handlers.MonitoringHandler;
+import com.prices.api.models.MonitoringConfiguration;
 import com.prices.api.models.MonitoringToken;
+import com.prices.api.repositories.MonitoringConfigurationRepository;
+import com.prices.api.repositories.ProjectRepository;
 import com.prices.api.services.MonitoringService;
 import io.micronaut.http.HttpRequest;
 import io.micronaut.http.HttpResponse;
@@ -34,18 +38,19 @@ import static com.prices.api.constants.Constants.MON_TOKEN_PARAM;
 public class MonitoringController {
 
     private final MonitoringHandler handler;
+    private final MonitoringConfigurationHandler configHandler;
     private final MonitoringService monitoringService;
+    private final MonitoringConfigurationRepository monitoringConfigRepo;
+    private final ProjectRepository projectRepo;
     private final GrafanaConfig grafanaConfig;
     private HttpClient grafanaClient;
-    private HttpClient prometheusClient;
 
     @PostConstruct
     void init() {
         try {
             grafanaClient = HttpClient.create(URI.create(grafanaConfig.getUrl()).toURL());
-            prometheusClient = HttpClient.create(URI.create(grafanaConfig.getPrometheusUrl()).toURL());
         } catch (java.net.MalformedURLException e) {
-            throw new RuntimeException("Invalid Grafana/Prometheus URL", e);
+            throw new RuntimeException("Invalid Grafana URL", e);
         }
     }
 
@@ -55,6 +60,14 @@ public class MonitoringController {
         Long userId = Long.parseLong(auth.getName());
         String role = (String) auth.getAttributes().get("role");
         return handler.createToken(req.getSlug(), userId, role);
+    }
+
+    @Get("/api/monitoring/services")
+    @Secured(SecurityRule.IS_ANONYMOUS)
+    public HttpResponse<?> getServices(
+            @QueryValue(defaultValue = "All") String query,
+            @QueryValue(defaultValue = "false") boolean enabledonly) {
+        return configHandler.getServices(query, enabledonly);
     }
 
     @Get("/grafana/{+path}")
@@ -284,28 +297,16 @@ public class MonitoringController {
 
     private String fetchFeatures(String slug) {
         try {
-            // Query Prometheus for all distinct feature label values for this job/slug
-            String query = "group by (feature) ({job=\"" + slug + "\", feature!=\"\"})";
-            String encoded = java.net.URLEncoder.encode(query, "UTF-8");
-            io.micronaut.http.HttpResponse<String> resp = prometheusClient.toBlocking()
-                    .exchange(HttpRequest.GET("/api/v1/query?query=" + encoded), String.class);
-            String body = resp.body();
-            if (body != null && body.contains("\"result\"")) {
-                // Parse feature values from result metrics
-                StringBuilder sb = new StringBuilder("[");
-                int idx = 0;
-                while ((idx = body.indexOf("\"feature\":\"", idx)) != -1) {
-                    int start = idx + 11;
-                    int end = body.indexOf("\"", start);
-                    if (sb.length() > 1) sb.append(",");
-                    sb.append("\"").append(body, start, end).append("\"");
-                    idx = end;
-                }
-                sb.append("]");
-                return sb.toString();
-            }
+            return projectRepo.findBySlug(slug)
+                    .flatMap(project -> monitoringConfigRepo.findByProjectId(project.getId()))
+                    .map(MonitoringConfiguration::getFeatures)
+                    .filter(features -> features != null && !features.isEmpty())
+                    .map(features -> "[" + features.stream()
+                            .map(f -> "\"" + f + "\"")
+                            .collect(java.util.stream.Collectors.joining(",")) + "]")
+                    .orElse("[]");
         } catch (Exception e) {
-            log.warn("Failed to fetch features from Prometheus: {}", e.getMessage());
+            log.warn("Failed to fetch features for {}: {}", slug, e.getMessage());
         }
         return "[]";
     }

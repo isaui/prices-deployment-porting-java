@@ -19,17 +19,30 @@
                     "value": "$__all"
                 },
                 "datasource": {
-                    "type": "prometheus",
-                    "uid": "prometheus"
+                    "type": "yesoreyeram-infinity-datasource",
+                    "uid": "infinity"
                 },
-                "definition": "label_values({__name__=~\"http_requests_total|method_calls_total|db_queries_total\"}, job)",
                 "includeAll": true,
                 "multi": true,
                 "name": "service",
                 "query": {
-                    "query": "label_values({__name__=~\"http_requests_total|method_calls_total|db_queries_total\"}, job)"
+                    "type": "infinity",
+                    "infinityQuery": {
+                        "refId": "variable",
+                        "type": "json",
+                        "source": "url",
+                        "url": "http://prices-api:8080/api/monitoring/services?query=All&enabledonly=true",
+                        "root_selector": "data.configurations",
+                        "columns": [
+                            {
+                                "selector": "slug",
+                                "text": "slug",
+                                "type": "string"
+                            }
+                        ]
+                    }
                 },
-                "refresh": 2,
+                "refresh": 1,
                 "type": "query",
                 "hide": 2
             },
@@ -40,18 +53,25 @@
                     "value": "$__all"
                 },
                 "datasource": {
-                    "type": "prometheus",
-                    "uid": "prometheus"
+                    "type": "yesoreyeram-infinity-datasource",
+                    "uid": "infinity"
                 },
-                "definition": "label_values({__name__=~\"http_requests_total|method_calls_total|db_queries_total\", job=~\"$service\"}, feature)",
                 "allValue": ".*",
                 "includeAll": true,
                 "multi": true,
                 "name": "feature",
                 "query": {
-                    "query": "label_values({__name__=~\"http_requests_total|method_calls_total|db_queries_total\", job=~\"$service\"}, feature)"
+                    "type": "infinity",
+                    "infinityQuery": {
+                        "refId": "variable",
+                        "type": "json",
+                        "source": "url",
+                        "url": "http://prices-api:8080/api/monitoring/services?query=${service:csv}&enabledonly=true",
+                        "root_selector": "data.configurations[*].features[*]",
+                        "columns": []
+                    }
                 },
-                "refresh": 2,
+                "refresh": 1,
                 "type": "query"
             }
         ]

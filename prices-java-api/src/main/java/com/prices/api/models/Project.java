@@ -83,6 +83,9 @@ public class Project {
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<DeploymentHistory> deploymentHistories;
 
+    @OneToOne(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
+    private MonitoringConfiguration monitoringConfiguration;
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();

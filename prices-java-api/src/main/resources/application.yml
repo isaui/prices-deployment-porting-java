@@ -37,6 +37,9 @@ micronaut:
       - pattern: /api/monitoring/token/**
         access:
           - isAnonymous()
+      - pattern: /api/monitoring/services
+        access:
+          - isAnonymous()
       - pattern: /grafana/**
         access:
           - isAnonymous()

@@ -75,6 +75,10 @@ public class DeploymentContext {
     private List<String> logs = new ArrayList<>();
     private java.util.function.Consumer<String> logListener;
 
+    // Monitoring config (parsed from monitoring.properties)
+    private Boolean monitoringEnabled;
+    private List<String> monitoringFeatures;
+
     public void addLog(String message) {
         log.info("[{}] {}", projectSlug, message);
         logs.add(message);

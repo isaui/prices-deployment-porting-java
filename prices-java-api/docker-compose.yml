@@ -192,7 +192,7 @@ services:
     restart: unless-stopped
 
   grafana:
-    image: grafana/grafana:11.2.4
+    image: grafana/grafana:11.6.0
     container_name: prices-grafana
     user: "0"
     environment:
@@ -225,7 +225,7 @@ services:
     restart: unless-stopped
 
   grafana-admin:
-    image: grafana/grafana:11.2.4
+    image: grafana/grafana:11.6.0
     container_name: prices-grafana-admin
     user: "0"
     environment:

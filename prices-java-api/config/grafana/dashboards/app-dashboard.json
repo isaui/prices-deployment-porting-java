@@ -31,7 +31,7 @@
                         "refId": "variable",
                         "type": "json",
                         "source": "url",
-                        "url": "http://prices-api:8080/api/monitoring/services?query=All&enabledonly=true",
+                        "url": "http://prices-deployment-api:8080/api/monitoring/services?query=All&enabledonly=true",
                         "root_selector": "data.configurations",
                         "columns": [
                             {
@@ -65,7 +65,7 @@
                         "refId": "variable",
                         "type": "json",
                         "source": "url",
-                        "url": "http://prices-api:8080/api/monitoring/services?query=${service:csv}&enabledonly=true",
+                        "url": "http://prices-deployment-api:8080/api/monitoring/services?query=${service:csv}&enabledonly=true",
                         "root_selector": "data.configurations[*].features[*]",
                         "columns": []
                     }

@@ -542,7 +542,7 @@
             },
             "targets": [
                 {
-                    "expr": "{service_name=~\"$service\"} |~ \"\\\\[$feature\\\\]\"",
+                    "expr": "{service_name=~\"$service\"} | feature=~\"$feature\"",
                     "refId": "A"
                 }
             ],

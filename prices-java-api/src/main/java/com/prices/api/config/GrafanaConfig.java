@@ -8,7 +8,7 @@ import lombok.Data;
 public class GrafanaConfig {
     private String url = "http://grafana:3000";
     private String serviceAccountToken;
-    private String dashboardUid = "app-deployment-monitoring";
+    private String dashboardUid = "app-tenant-monitoring";
     private int tokenExpiryHours = 24;
     private String publicBaseUrl = "";
     private String prometheusUrl = "http://prometheus:9090";

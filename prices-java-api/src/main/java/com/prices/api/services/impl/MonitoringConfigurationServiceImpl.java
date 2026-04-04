@@ -5,23 +5,22 @@ import com.prices.api.models.Project;
 import com.prices.api.repositories.MonitoringConfigurationRepository;
 import com.prices.api.repositories.ProjectRepository;
 import com.prices.api.services.MonitoringConfigurationService;
-import io.micronaut.transaction.SynchronousTransactionManager;
 import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
-import java.sql.Connection;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Singleton
 @RequiredArgsConstructor
 public class MonitoringConfigurationServiceImpl implements MonitoringConfigurationService {
 
     private final MonitoringConfigurationRepository monitoringConfigRepo;
     private final ProjectRepository projectRepo;
-    private final SynchronousTransactionManager<Connection> txManager;
 
     @Override
     public List<MonitoringConfiguration> getConfigurations(String query, boolean enabledOnly) {
@@ -55,21 +54,20 @@ public class MonitoringConfigurationServiceImpl implements MonitoringConfigurati
 
     @Override
     public void upsert(Long projectId, boolean enabled, List<String> features) {
-        txManager.executeWrite(status -> {
-            Optional<MonitoringConfiguration> existing = monitoringConfigRepo.findByProjectId(projectId);
-            if (existing.isPresent()) {
-                MonitoringConfiguration config = existing.get();
-                config.setEnabled(enabled);
-                config.setFeatures(features);
-                monitoringConfigRepo.update(config);
-            } else {
-                MonitoringConfiguration config = new MonitoringConfiguration();
-                config.setProjectId(projectId);
-                config.setEnabled(enabled);
-                config.setFeatures(features);
-                monitoringConfigRepo.save(config);
-            }
-            return null;
-        });
+        Optional<MonitoringConfiguration> existing = monitoringConfigRepo.findByProjectId(projectId);
+        if (existing.isPresent()) {
+            MonitoringConfiguration config = existing.get();
+            config.setEnabled(enabled);
+            config.setFeatures(features);
+            monitoringConfigRepo.update(config);
+            log.info("Updated monitoring config: projectId={}", projectId);
+        } else {
+            MonitoringConfiguration config = new MonitoringConfiguration();
+            config.setProjectId(projectId);
+            config.setEnabled(enabled);
+            config.setFeatures(features);
+            MonitoringConfiguration saved = monitoringConfigRepo.save(config);
+            log.info("Saved new monitoring config: projectId={}, id={}", projectId, saved.getId());
+        }
     }
 }

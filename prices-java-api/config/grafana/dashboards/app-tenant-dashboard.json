@@ -14,9 +14,12 @@
         "list": [
             {
                 "current": {
-                    "selected": true,
-                    "text": "All",
-                    "value": "$__all"
+                    "text": [
+                        "All"
+                    ],
+                    "value": [
+                        "$__all"
+                    ]
                 },
                 "datasource": {
                     "type": "yesoreyeram-infinity-datasource",
@@ -25,23 +28,24 @@
                 "includeAll": true,
                 "multi": true,
                 "name": "service",
+                "options": [],
                 "query": {
-                    "refId": "variable",
-                    "type": "json",
-                    "source": "url",
-                    "parser": "backend",
-                    "url": "http://prices-deployment-api:8080/api/monitoring/services/slugs?query=All&enabledonly=true",
-                    "root_selector": "",
                     "columns": [],
-                    "queryType": "infinity"
+                    "parser": "backend",
+                    "queryType": "infinity",
+                    "refId": "variable",
+                    "root_selector": "",
+                    "source": "url",
+                    "type": "json",
+                    "url": "http://prices-deployment-api:8080/api/monitoring/services/slugs?query=All&enabledonly=true"
                 },
                 "refresh": 1,
                 "type": "query",
                 "hide": 2
             },
             {
+                "allValue": ".*",
                 "current": {
-                    "selected": true,
                     "text": "All",
                     "value": "$__all"
                 },
@@ -49,19 +53,19 @@
                     "type": "yesoreyeram-infinity-datasource",
                     "uid": "infinity"
                 },
-                "allValue": ".*",
                 "includeAll": true,
                 "multi": true,
                 "name": "feature",
+                "options": [],
                 "query": {
-                    "refId": "variable",
-                    "type": "json",
-                    "source": "url",
-                    "parser": "backend",
-                    "url": "http://prices-deployment-api:8080/api/monitoring/services/features?query=${service:csv}&enabledonly=true",
-                    "root_selector": "",
                     "columns": [],
-                    "queryType": "infinity"
+                    "parser": "backend",
+                    "queryType": "infinity",
+                    "refId": "variable",
+                    "root_selector": "",
+                    "source": "url",
+                    "type": "json",
+                    "url": "http://prices-deployment-api:8080/api/monitoring/services/features?query=${service:csv}&enabledonly=true"
                 },
                 "refresh": 1,
                 "type": "query"

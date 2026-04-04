@@ -30,14 +30,24 @@
                 "name": "service",
                 "options": [],
                 "query": {
-                    "columns": [],
-                    "parser": "backend",
+                    "infinityQuery": {
+                        "columns": [],
+                        "data": "",
+                        "filters": [],
+                        "format": "table",
+                        "parser": "backend",
+                        "refId": "",
+                        "root_selector": "",
+                        "source": "url",
+                        "type": "json",
+                        "url": "http://prices-deployment-api:8080/api/monitoring/services/slugs?query=All&enabledonly=true",
+                        "url_options": {
+                            "data": "",
+                            "method": "GET"
+                        }
+                    },
                     "queryType": "infinity",
-                    "refId": "variable",
-                    "root_selector": "",
-                    "source": "url",
-                    "type": "json",
-                    "url": "http://prices-deployment-api:8080/api/monitoring/services/slugs?query=All&enabledonly=true"
+                    "refId": "variable"
                 },
                 "refresh": 1,
                 "type": "query",
@@ -58,14 +68,24 @@
                 "name": "feature",
                 "options": [],
                 "query": {
-                    "columns": [],
-                    "parser": "backend",
+                    "infinityQuery": {
+                        "columns": [],
+                        "data": "",
+                        "filters": [],
+                        "format": "table",
+                        "parser": "backend",
+                        "refId": "",
+                        "root_selector": "",
+                        "source": "url",
+                        "type": "json",
+                        "url": "http://prices-deployment-api:8080/api/monitoring/services/features?query=${service:csv}&enabledonly=true",
+                        "url_options": {
+                            "data": "",
+                            "method": "GET"
+                        }
+                    },
                     "queryType": "infinity",
-                    "refId": "variable",
-                    "root_selector": "",
-                    "source": "url",
-                    "type": "json",
-                    "url": "http://prices-deployment-api:8080/api/monitoring/services/features?query=${service:csv}&enabledonly=true"
+                    "refId": "variable"
                 },
                 "refresh": 1,
                 "type": "query"

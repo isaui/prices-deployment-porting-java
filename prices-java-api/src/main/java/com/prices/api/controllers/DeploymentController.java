@@ -34,6 +34,7 @@ public class DeploymentController {
     private final UploadHandler uploadHandler;
 
     @Get(value = "/api/deployments/{id}/stream", produces = MediaType.TEXT_EVENT_STREAM)
+    @ExecuteOn(TaskExecutors.IO)
     public Publisher<Event<String>> getLogs(Authentication auth, @PathVariable Long id) {
         Long userId = Long.parseLong(auth.getName());
         String role = (String) auth.getAttributes().get("role");

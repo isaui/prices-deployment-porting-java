@@ -107,6 +107,7 @@ public class ProjectController {
     }
 
     @Get(value = "/{id}/logs/stream", produces = MediaType.TEXT_EVENT_STREAM)
+    @ExecuteOn(TaskExecutors.IO)
     public Flux<String> streamLogs(Authentication auth, @PathVariable Long id) {
         Long userId = Long.parseLong(auth.getName());
         String role = (String) auth.getAttributes().get("role");

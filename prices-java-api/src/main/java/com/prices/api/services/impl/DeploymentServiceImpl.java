@@ -212,6 +212,9 @@ public class DeploymentServiceImpl implements DeploymentService {
 
     private void upsertMonitoringConfig(DeploymentContext ctx, Project project) {
         try {
+            log.info("upsertMonitoringConfig called for {} (projectId={}), monitoringEnabled={}, monitoringFeatures={}",
+                    ctx.getProjectSlug(), project.getId(), ctx.getMonitoringEnabled(), ctx.getMonitoringFeatures());
+
             boolean enabled = ctx.getMonitoringEnabled() != null ? ctx.getMonitoringEnabled() : false;
             List<String> features = ctx.getMonitoringFeatures() != null ? ctx.getMonitoringFeatures() : List.of();
 
@@ -219,7 +222,7 @@ public class DeploymentServiceImpl implements DeploymentService {
 
             log.info("Upserted monitoring config for {}: enabled={}, features={}", ctx.getProjectSlug(), enabled, features);
         } catch (Exception e) {
-            log.warn("Failed to upsert monitoring config for {}: {}", ctx.getProjectSlug(), e.getMessage());
+            log.warn("Failed to upsert monitoring config for {}: {}", ctx.getProjectSlug(), e.getMessage(), e);
         }
     }
 }

@@ -6,10 +6,12 @@ import com.prices.api.repositories.MonitoringConfigurationRepository;
 import com.prices.api.repositories.ProjectRepository;
 import com.prices.api.services.MonitoringConfigurationService;
 import jakarta.inject.Singleton;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Singleton
@@ -47,5 +49,23 @@ public class MonitoringConfigurationServiceImpl implements MonitoringConfigurati
                     .collect(Collectors.toList());
         }
         return configs;
+    }
+
+    @Override
+    @Transactional
+    public void upsert(Long projectId, boolean enabled, List<String> features) {
+        Optional<MonitoringConfiguration> existing = monitoringConfigRepo.findByProjectId(projectId);
+        if (existing.isPresent()) {
+            MonitoringConfiguration config = existing.get();
+            config.setEnabled(enabled);
+            config.setFeatures(features);
+            monitoringConfigRepo.update(config);
+        } else {
+            MonitoringConfiguration config = new MonitoringConfiguration();
+            config.setProjectId(projectId);
+            config.setEnabled(enabled);
+            config.setFeatures(features);
+            monitoringConfigRepo.save(config);
+        }
     }
 }

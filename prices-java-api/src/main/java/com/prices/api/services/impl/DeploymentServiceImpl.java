@@ -6,10 +6,9 @@ import com.prices.api.dto.requests.DeployRequest;
 import com.prices.api.models.DeploymentHistory;
 import com.prices.api.models.DeploymentStatus;
 import com.prices.api.models.Project;
-import com.prices.api.models.MonitoringConfiguration;
-import com.prices.api.repositories.MonitoringConfigurationRepository;
 import com.prices.api.repositories.DeploymentHistoryRepository;
 import com.prices.api.repositories.ProjectRepository;
+import com.prices.api.services.MonitoringConfigurationService;
 import com.prices.api.services.DeploymentService;
 import com.prices.api.services.deployment.queue.DeploymentQueue;
 import com.prices.api.services.deployment.DeploymentContext;
@@ -39,7 +38,7 @@ public class DeploymentServiceImpl implements DeploymentService {
 
     private final DeploymentHistoryRepository deploymentRepo;
     private final ProjectRepository projectRepo;
-    private final MonitoringConfigurationRepository monitoringConfigRepo;
+    private final MonitoringConfigurationService monitoringConfigService;
     private final DockerConfig dockerConfig;
     private final DatabaseConfig databaseConfig;
     private final DeploymentQueue deploymentQueue;
@@ -213,27 +212,10 @@ public class DeploymentServiceImpl implements DeploymentService {
 
     private void upsertMonitoringConfig(DeploymentContext ctx, Project project) {
         try {
-            if (ctx.getMonitoringEnabled() == null) {
-                log.debug("No monitoring config parsed for {}", ctx.getProjectSlug());
-                return;
-            }
-
-            boolean enabled = ctx.getMonitoringEnabled();
+            boolean enabled = ctx.getMonitoringEnabled() != null ? ctx.getMonitoringEnabled() : false;
             List<String> features = ctx.getMonitoringFeatures() != null ? ctx.getMonitoringFeatures() : List.of();
 
-            Optional<MonitoringConfiguration> existing = monitoringConfigRepo.findByProjectId(project.getId());
-            if (existing.isPresent()) {
-                MonitoringConfiguration config = existing.get();
-                config.setEnabled(enabled);
-                config.setFeatures(features);
-                monitoringConfigRepo.update(config);
-            } else {
-                MonitoringConfiguration config = new MonitoringConfiguration();
-                config.setProjectId(project.getId());
-                config.setEnabled(enabled);
-                config.setFeatures(features);
-                monitoringConfigRepo.save(config);
-            }
+            monitoringConfigService.upsert(project.getId(), enabled, features);
 
             log.info("Upserted monitoring config for {}: enabled={}, features={}", ctx.getProjectSlug(), enabled, features);
         } catch (Exception e) {

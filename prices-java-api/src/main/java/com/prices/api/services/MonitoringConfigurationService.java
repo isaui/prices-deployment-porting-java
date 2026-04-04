@@ -6,4 +6,6 @@ import java.util.List;
 
 public interface MonitoringConfigurationService {
     List<MonitoringConfiguration> getConfigurations(String query, boolean enabledOnly);
+
+    void upsert(Long projectId, boolean enabled, List<String> features);
 }

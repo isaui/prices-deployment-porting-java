@@ -3,6 +3,7 @@ package com.prices.api.models;
 import io.hypersistence.utils.hibernate.type.json.JsonType;
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import org.hibernate.annotations.Type;
 
 import java.time.LocalDateTime;
@@ -10,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 
 @Data
+@EqualsAndHashCode(exclude = {"user", "deploymentHistories", "monitoringConfiguration"})
 @Entity
 @Table(name = "projects")
 public class Project {

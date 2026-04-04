@@ -3,12 +3,14 @@ package com.prices.api.models;
 import io.hypersistence.utils.hibernate.type.json.JsonType;
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import org.hibernate.annotations.Type;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
+@EqualsAndHashCode(exclude = {"project"})
 @Entity
 @Table(name = "monitoring_configurations")
 public class MonitoringConfiguration {

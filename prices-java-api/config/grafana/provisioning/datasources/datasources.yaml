@@ -36,3 +36,6 @@ datasources:
     access: proxy
     uid: infinity
     editable: false
+    jsonData:
+      allowedHosts:
+        - http://prices-deployment-api:8080

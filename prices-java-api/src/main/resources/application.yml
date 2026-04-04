@@ -40,6 +40,9 @@ micronaut:
       - pattern: /api/monitoring/services
         access:
           - isAnonymous()
+      - pattern: /api/monitoring/services/**
+        access:
+          - isAnonymous()
       - pattern: /grafana/**
         access:
           - isAnonymous()

@@ -10,7 +10,9 @@ import io.micronaut.http.HttpResponse;
 import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Singleton
@@ -33,6 +35,36 @@ public class MonitoringConfigurationHandler {
         } catch (Exception e) {
             return HttpResponse.serverError(
                     ErrorResponse.error("Failed to fetch monitoring configurations: " + e.getMessage()));
+        }
+    }
+
+    public HttpResponse<?> getServiceSlugs(String query, boolean enabledOnly) {
+        try {
+            List<MonitoringConfiguration> configs = monitoringConfigurationService
+                    .getConfigurations(query, enabledOnly);
+            List<String> slugs = configs.stream()
+                    .map(c -> c.getProject() != null ? c.getProject().getSlug() : null)
+                    .filter(s -> s != null)
+                    .collect(Collectors.toList());
+            return HttpResponse.ok(slugs);
+        } catch (Exception e) {
+            return HttpResponse.serverError(
+                    ErrorResponse.error("Failed to fetch slugs: " + e.getMessage()));
+        }
+    }
+
+    public HttpResponse<?> getServiceFeatures(String query, boolean enabledOnly) {
+        try {
+            List<MonitoringConfiguration> configs = monitoringConfigurationService
+                    .getConfigurations(query, enabledOnly);
+            Set<String> features = new LinkedHashSet<>();
+            for (MonitoringConfiguration c : configs) {
+                if (c.getFeatures() != null) features.addAll(c.getFeatures());
+            }
+            return HttpResponse.ok(List.copyOf(features));
+        } catch (Exception e) {
+            return HttpResponse.serverError(
+                    ErrorResponse.error("Failed to fetch features: " + e.getMessage()));
         }
     }
 

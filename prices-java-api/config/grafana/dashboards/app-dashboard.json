@@ -30,15 +30,9 @@
                     "type": "json",
                     "source": "url",
                     "parser": "backend",
-                    "url": "http://prices-deployment-api:8080/api/monitoring/services?query=All&enabledonly=true",
-                    "root_selector": "data.configurations",
-                    "columns": [
-                        {
-                            "selector": "slug",
-                            "text": "slug",
-                            "type": "string"
-                        }
-                    ],
+                    "url": "http://prices-deployment-api:8080/api/monitoring/services/slugs?query=All&enabledonly=true",
+                    "root_selector": "",
+                    "columns": [],
                     "queryType": "infinity"
                 },
                 "refresh": 1,
@@ -63,15 +57,9 @@
                     "type": "json",
                     "source": "url",
                     "parser": "backend",
-                    "url": "http://prices-deployment-api:8080/api/monitoring/services?query=${service:csv}&enabledonly=true",
-                    "root_selector": "data.configurations.#.features|@flatten",
-                    "columns": [
-                        {
-                            "selector": "",
-                            "text": "feature",
-                            "type": "string"
-                        }
-                    ],
+                    "url": "http://prices-deployment-api:8080/api/monitoring/services/features?query=${service:csv}&enabledonly=true",
+                    "root_selector": "",
+                    "columns": [],
                     "queryType": "infinity"
                 },
                 "refresh": 1,

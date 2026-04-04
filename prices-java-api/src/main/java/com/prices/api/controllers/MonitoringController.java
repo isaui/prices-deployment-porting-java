@@ -70,6 +70,22 @@ public class MonitoringController {
         return configHandler.getServices(query, enabledonly);
     }
 
+    @Get("/api/monitoring/services/slugs")
+    @Secured(SecurityRule.IS_ANONYMOUS)
+    public HttpResponse<?> getServiceSlugs(
+            @QueryValue(defaultValue = "All") String query,
+            @QueryValue(defaultValue = "false") boolean enabledonly) {
+        return configHandler.getServiceSlugs(query, enabledonly);
+    }
+
+    @Get("/api/monitoring/services/features")
+    @Secured(SecurityRule.IS_ANONYMOUS)
+    public HttpResponse<?> getServiceFeatures(
+            @QueryValue(defaultValue = "All") String query,
+            @QueryValue(defaultValue = "false") boolean enabledonly) {
+        return configHandler.getServiceFeatures(query, enabledonly);
+    }
+
     @Get("/grafana/{+path}")
     @Secured(SecurityRule.IS_ANONYMOUS)
     public HttpResponse<?> proxyGet(@PathVariable String path, HttpRequest<?> request) {

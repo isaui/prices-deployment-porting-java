@@ -83,7 +83,7 @@ public class Project {
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<DeploymentHistory> deploymentHistories;
 
-    @OneToOne(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToOne(mappedBy = "project", cascade = CascadeType.REMOVE)
     private MonitoringConfiguration monitoringConfiguration;
 
     @PrePersist

@@ -48,6 +48,8 @@ services:
       - "traefik.http.routers.api.rule=Host(`deploy.${PRICES_DOMAIN:-skripsi.isacitra.com}`)"
       - "traefik.http.routers.api.entrypoints=web,websecure"
       - "traefik.http.services.api.loadbalancer.server.port=8080"
+      - "traefik.http.middlewares.api-sse.buffering.maxResponseBodyBytes=0"
+      - "traefik.http.routers.api.middlewares=api-sse"
     restart: unless-stopped
 
   postgres:

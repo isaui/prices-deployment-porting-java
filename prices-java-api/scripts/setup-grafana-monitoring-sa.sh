@@ -1,20 +1,24 @@
 #!/bin/bash
-# Setup Grafana Service Account and generate a token.
-# Usage: ./scripts/setup-grafana-sa.sh [GRAFANA_URL] [ADMIN_USER] [ADMIN_PASSWORD]
+# Setup Grafana Service Account and generate a token via docker exec.
+# Usage: ./scripts/setup-grafana-sa.sh [CONTAINER_NAME] [ADMIN_USER] [ADMIN_PASSWORD]
 
 set -e
 
-GRAFANA_URL="${1:-http://localhost:3000}"
+CONTAINER="${1:-prices-grafana}"
 ADMIN_USER="${2:-admin}"
 ADMIN_PASSWORD="${3:-admin123}"
+GRAFANA_URL="http://localhost:3000"
 SA_NAME="prices-api"
 TOKEN_NAME="prices-api-token"
 
-echo "==> Grafana URL: $GRAFANA_URL"
+run_curl() {
+  docker exec "$CONTAINER" curl -s "$@"
+}
+
+echo "==> Container: $CONTAINER"
 echo "==> Creating service account: $SA_NAME"
 
-# Create service account
-SA_RESPONSE=$(curl -s -X POST "$GRAFANA_URL/api/serviceaccounts" \
+SA_RESPONSE=$(run_curl -X POST "$GRAFANA_URL/api/serviceaccounts" \
   -H "Content-Type: application/json" \
   -u "$ADMIN_USER:$ADMIN_PASSWORD" \
   -d "{\"name\":\"$SA_NAME\",\"role\":\"Viewer\"}")
@@ -24,10 +28,9 @@ SA_ID=$(echo "$SA_RESPONSE" | grep -o '"id":[0-9]*' | head -1 | cut -d: -f2)
 if [ -z "$SA_ID" ]; then
   echo "Failed to create service account. Response:"
   echo "$SA_RESPONSE"
-  # Try to get existing SA
   echo ""
   echo "==> Checking if service account already exists..."
-  SA_LIST=$(curl -s -X GET "$GRAFANA_URL/api/serviceaccounts/search?query=$SA_NAME" \
+  SA_LIST=$(run_curl -X GET "$GRAFANA_URL/api/serviceaccounts/search?query=$SA_NAME" \
     -u "$ADMIN_USER:$ADMIN_PASSWORD")
   SA_ID=$(echo "$SA_LIST" | grep -o "\"id\":[0-9]*" | head -1 | cut -d: -f2)
   if [ -z "$SA_ID" ]; then
@@ -40,8 +43,7 @@ fi
 echo "==> Service account ID: $SA_ID"
 echo "==> Generating token: $TOKEN_NAME"
 
-# Generate token
-TOKEN_RESPONSE=$(curl -s -X POST "$GRAFANA_URL/api/serviceaccounts/$SA_ID/tokens" \
+TOKEN_RESPONSE=$(run_curl -X POST "$GRAFANA_URL/api/serviceaccounts/$SA_ID/tokens" \
   -H "Content-Type: application/json" \
   -u "$ADMIN_USER:$ADMIN_PASSWORD" \
   -d "{\"name\":\"$TOKEN_NAME\"}")

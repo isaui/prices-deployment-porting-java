@@ -26,21 +26,20 @@
                 "multi": true,
                 "name": "service",
                 "query": {
-                    "type": "infinity",
-                    "infinityQuery": {
-                        "refId": "variable",
-                        "type": "json",
-                        "source": "url",
-                        "url": "http://prices-deployment-api:8080/api/monitoring/services?query=All&enabledonly=true",
-                        "root_selector": "data.configurations",
-                        "columns": [
-                            {
-                                "selector": "slug",
-                                "text": "slug",
-                                "type": "string"
-                            }
-                        ]
-                    }
+                    "refId": "variable",
+                    "type": "json",
+                    "source": "url",
+                    "parser": "backend",
+                    "url": "http://prices-deployment-api:8080/api/monitoring/services?query=All&enabledonly=true",
+                    "root_selector": "data.configurations",
+                    "columns": [
+                        {
+                            "selector": "slug",
+                            "text": "slug",
+                            "type": "string"
+                        }
+                    ],
+                    "queryType": "infinity"
                 },
                 "refresh": 1,
                 "type": "query",
@@ -61,15 +60,20 @@
                 "multi": true,
                 "name": "feature",
                 "query": {
-                    "type": "infinity",
-                    "infinityQuery": {
-                        "refId": "variable",
-                        "type": "json",
-                        "source": "url",
-                        "url": "http://prices-deployment-api:8080/api/monitoring/services?query=${service:csv}&enabledonly=true",
-                        "root_selector": "data.configurations[*].features[*]",
-                        "columns": []
-                    }
+                    "refId": "variable",
+                    "type": "json",
+                    "source": "url",
+                    "parser": "backend",
+                    "url": "http://prices-deployment-api:8080/api/monitoring/services?query=${service:csv}&enabledonly=true",
+                    "root_selector": "data.configurations.#.features|@flatten",
+                    "columns": [
+                        {
+                            "selector": "",
+                            "text": "feature",
+                            "type": "string"
+                        }
+                    ],
+                    "queryType": "infinity"
                 },
                 "refresh": 1,
                 "type": "query"

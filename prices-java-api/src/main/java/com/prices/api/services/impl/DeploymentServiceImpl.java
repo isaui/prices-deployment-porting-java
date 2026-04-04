@@ -53,8 +53,8 @@ public class DeploymentServiceImpl implements DeploymentService {
     }
 
     @Override
-    @Transactional
     public DeploymentHistory deploy(DeployRequest req) {
+        // Step 1: Save to DB in its own transaction (via repository auto-transaction)
         Project project = projectRepo.findById(req.getProjectID())
                 .orElseThrow(() -> new RuntimeException("Project not found"));
 
@@ -66,10 +66,10 @@ public class DeploymentServiceImpl implements DeploymentService {
         dep.setEnvironment("production");
         dep.setStartedAt(LocalDateTime.now());
 
-        deploymentRepo.save(dep);
+        dep = deploymentRepo.save(dep);
 
-        // Create log sink early so user can subscribe to SSE immediately
-        Sinks.Many<String> logSink = Sinks.many().multicast().onBackpressureBuffer();
+        // Step 2: Create log sink (replay so late subscribers get all messages)
+        Sinks.Many<String> logSink = Sinks.many().replay().all();
         logSinks.put(dep.getId(), logSink);
 
         int queueSize = deploymentQueue.getQueueSize();
@@ -79,6 +79,7 @@ public class DeploymentServiceImpl implements DeploymentService {
             logSink.tryEmitNext("Deployment queued. Starting shortly...");
         }
 
+        // Step 3: Enqueue AFTER DB commit so worker can find the entity
         deploymentQueue.enqueue(dep, project, req);
 
         return dep;
@@ -127,7 +128,7 @@ public class DeploymentServiceImpl implements DeploymentService {
 
         // Reuse existing log sink (created during enqueue)
         final Sinks.Many<String> logSink = logSinks.computeIfAbsent(dep.getId(),
-                id -> Sinks.many().multicast().onBackpressureBuffer());
+                id -> Sinks.many().replay().all());
         logSink.tryEmitNext("Deployment started.");
 
         // Detect redeploy

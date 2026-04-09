@@ -69,6 +69,9 @@ public class Project {
 
     @JsonProperty("projectType")
     private String projectType;
+
+    @JsonProperty("productLine")
+    private String productLine;
     
     @JsonProperty("createdAt")
     private String createdAt;

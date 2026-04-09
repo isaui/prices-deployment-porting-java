@@ -10,8 +10,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.Arrays;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -50,6 +52,42 @@ public class MonitoringConfigurationServiceImpl implements MonitoringConfigurati
                     .collect(Collectors.toList());
         }
         return configs;
+    }
+
+    @Override
+    public List<String> getProductLines(boolean enabledOnly) {
+        List<MonitoringConfiguration> configs = getConfigurations("All", enabledOnly);
+        return configs.stream()
+                .map(c -> c.getProject() != null ? c.getProject().getProductLine() : null)
+                .filter(pl -> pl != null && !pl.isEmpty())
+                .distinct()
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<String> getSlugs(String query, String productLine, boolean enabledOnly) {
+        List<MonitoringConfiguration> configs = getConfigurations(query, enabledOnly);
+        return configs.stream()
+                .filter(c -> {
+                    if (productLine == null || productLine.equalsIgnoreCase("All") || productLine.equals("$__all")) {
+                        return true;
+                    }
+                    return c.getProject() != null
+                            && productLine.equals(c.getProject().getProductLine());
+                })
+                .map(c -> c.getProject() != null ? c.getProject().getSlug() : null)
+                .filter(s -> s != null)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<String> getFeatures(String query, boolean enabledOnly) {
+        List<MonitoringConfiguration> configs = getConfigurations(query, enabledOnly);
+        Set<String> features = new LinkedHashSet<>();
+        for (MonitoringConfiguration c : configs) {
+            if (c.getFeatures() != null) features.addAll(c.getFeatures());
+        }
+        return List.copyOf(features);
     }
 
     @Override

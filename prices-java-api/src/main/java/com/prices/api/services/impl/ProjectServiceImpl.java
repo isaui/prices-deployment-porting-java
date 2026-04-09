@@ -62,6 +62,7 @@ public class ProjectServiceImpl implements ProjectService {
         project.setName(req.getName());
         project.setSlug(slug);
         project.setDescription(req.getDescription());
+        project.setProductLine(req.getProductLine());
         project.setStatus("pending");
         project.setUserId(userId);
 
@@ -125,6 +126,9 @@ public class ProjectServiceImpl implements ProjectService {
         }
         if (req.getDescription() != null) {
             project.setDescription(req.getDescription());
+        }
+        if (req.getProductLine() != null) {
+            project.setProductLine(req.getProductLine());
         }
 
         // Frontend custom URL
@@ -403,7 +407,7 @@ public class ProjectServiceImpl implements ProjectService {
 
     @Override
     @Transactional
-    public Project createInternalProject(String name, String customFrontendUrl, String customBackendUrl,
+    public Project createInternalProject(String name, String productLine, String customFrontendUrl, String customBackendUrl,
                                           Integer frontendPort, Integer backendPort) {
         String slug = SlugUtils.generateSlug(name);
         String parentDomain = EnvUtils.getParentDomain();
@@ -411,6 +415,7 @@ public class ProjectServiceImpl implements ProjectService {
         Project project = new Project();
         project.setName(name);
         project.setSlug(slug);
+        project.setProductLine(productLine);
         project.setStatus("pending");
         project.setUserId(null);  // Internal/SSH projects have no user
         project.setProjectType("ssh");

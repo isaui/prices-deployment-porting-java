@@ -10,9 +10,7 @@ import io.micronaut.http.HttpResponse;
 import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 @Singleton
@@ -38,15 +36,18 @@ public class MonitoringConfigurationHandler {
         }
     }
 
-    public HttpResponse<?> getServiceSlugs(String query, boolean enabledOnly) {
+    public HttpResponse<?> getServiceProductLines(boolean enabledOnly) {
         try {
-            List<MonitoringConfiguration> configs = monitoringConfigurationService
-                    .getConfigurations(query, enabledOnly);
-            List<String> slugs = configs.stream()
-                    .map(c -> c.getProject() != null ? c.getProject().getSlug() : null)
-                    .filter(s -> s != null)
-                    .collect(Collectors.toList());
-            return HttpResponse.ok(slugs);
+            return HttpResponse.ok(monitoringConfigurationService.getProductLines(enabledOnly));
+        } catch (Exception e) {
+            return HttpResponse.serverError(
+                    ErrorResponse.error("Failed to fetch product lines: " + e.getMessage()));
+        }
+    }
+
+    public HttpResponse<?> getServiceSlugs(String query, String productLine, boolean enabledOnly) {
+        try {
+            return HttpResponse.ok(monitoringConfigurationService.getSlugs(query, productLine, enabledOnly));
         } catch (Exception e) {
             return HttpResponse.serverError(
                     ErrorResponse.error("Failed to fetch slugs: " + e.getMessage()));
@@ -55,13 +56,7 @@ public class MonitoringConfigurationHandler {
 
     public HttpResponse<?> getServiceFeatures(String query, boolean enabledOnly) {
         try {
-            List<MonitoringConfiguration> configs = monitoringConfigurationService
-                    .getConfigurations(query, enabledOnly);
-            Set<String> features = new LinkedHashSet<>();
-            for (MonitoringConfiguration c : configs) {
-                if (c.getFeatures() != null) features.addAll(c.getFeatures());
-            }
-            return HttpResponse.ok(List.copyOf(features));
+            return HttpResponse.ok(monitoringConfigurationService.getFeatures(query, enabledOnly));
         } catch (Exception e) {
             return HttpResponse.serverError(
                     ErrorResponse.error("Failed to fetch features: " + e.getMessage()));

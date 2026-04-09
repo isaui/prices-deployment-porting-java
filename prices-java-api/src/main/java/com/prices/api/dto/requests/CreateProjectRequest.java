@@ -8,6 +8,7 @@ import lombok.Data;
 public class CreateProjectRequest {
     private String name;
     private String description;
+    private String productLine;
 
     private String customFrontendUrl;
     private String customBackendUrl;

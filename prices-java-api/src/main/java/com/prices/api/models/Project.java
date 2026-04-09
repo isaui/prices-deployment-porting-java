@@ -22,6 +22,9 @@ public class Project {
     @Column(nullable = false)
     private String name;
 
+    @Column
+    private String productLine;
+
     @Column(unique = true, nullable = false)
     private String slug;
 
@@ -65,6 +68,9 @@ public class Project {
 
     @Column(columnDefinition = "varchar(20) default 'regular'")
     private String projectType = "regular";  // "regular" or "ssh"
+
+    @Column
+    private String productLine;
 
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")

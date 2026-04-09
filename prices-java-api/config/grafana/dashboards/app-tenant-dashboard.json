@@ -27,6 +27,7 @@
                 },
                 "includeAll": true,
                 "multi": true,
+                "allValue": ".*",
                 "name": "service",
                 "options": [],
                 "query": {

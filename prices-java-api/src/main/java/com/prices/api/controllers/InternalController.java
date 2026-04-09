@@ -57,6 +57,7 @@ public class InternalController {
         try {
             Project saved = projectService.createInternalProject(
                     request.getName(),
+                    request.getProductLine(),
                     request.getCustomFrontendUrl(),
                     request.getCustomBackendUrl(),
                     request.getFrontendListeningPort(),

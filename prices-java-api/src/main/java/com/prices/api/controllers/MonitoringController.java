@@ -70,12 +70,20 @@ public class MonitoringController {
         return configHandler.getServices(query, enabledonly);
     }
 
+    @Get("/api/monitoring/services/productlines")
+    @Secured(SecurityRule.IS_ANONYMOUS)
+    public HttpResponse<?> getServiceProductLines(
+            @QueryValue(defaultValue = "false") boolean enabledonly) {
+        return configHandler.getServiceProductLines(enabledonly);
+    }
+
     @Get("/api/monitoring/services/slugs")
     @Secured(SecurityRule.IS_ANONYMOUS)
     public HttpResponse<?> getServiceSlugs(
             @QueryValue(defaultValue = "All") String query,
+            @QueryValue(defaultValue = "All") String productLine,
             @QueryValue(defaultValue = "false") boolean enabledonly) {
-        return configHandler.getServiceSlugs(query, enabledonly);
+        return configHandler.getServiceSlugs(query, productLine, enabledonly);
     }
 
     @Get("/api/monitoring/services/features")

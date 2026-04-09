@@ -11,6 +11,7 @@ import lombok.AllArgsConstructor;
 public class UpdateProjectRequest {
     private String name;
     private String description;
+    private String productLine;
 
     // Frontend
     @JsonProperty("customFrontendUrl")

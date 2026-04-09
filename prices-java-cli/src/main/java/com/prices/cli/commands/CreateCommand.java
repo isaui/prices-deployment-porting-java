@@ -25,6 +25,9 @@ public class CreateCommand implements Callable<Integer> {
     @Option(names = {"-d", "--desc"}, description = "Description")
     private String description;
 
+    @Option(names = {"-p", "--product-line"}, description = "Product line name")
+    private String productLine;
+
     @Option(names = {"--frontend-url"}, description = "Custom frontend domain")
     private String customFrontendUrl;
 
@@ -72,6 +75,7 @@ public class CreateCommand implements Callable<Integer> {
         CreateProjectRequest req = new CreateProjectRequest();
         req.setName(name);
         req.setDescription(description);
+        req.setProductLine(productLine);
         req.setCustomFrontendURL(customFrontendUrl);
         req.setCustomBackendURL(customBackendUrl);
         req.setCustomMonitoringURL(customMonitoringUrl);

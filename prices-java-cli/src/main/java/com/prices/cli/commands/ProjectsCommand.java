@@ -57,7 +57,7 @@ public class ProjectsCommand implements Callable<Integer> {
                 return 0;
             }
 
-            System.out.printf("%-20s %-15s %-30s %-30s %-30s%n", "SLUG", "STATUS", "FRONTEND", "BACKEND", "MONITORING");
+            System.out.printf("%-20s %-15s %-15s %-25s %-25s %-25s%n", "SLUG", "STATUS", "PRODUCT LINE", "FRONTEND", "BACKEND", "MONITORING");
             System.out.println("-".repeat(130));
             
             for (Project p : projects) {
@@ -84,12 +84,15 @@ public class ProjectsCommand implements Callable<Integer> {
                     }
                 }
 
-                System.out.printf("%-20s %-15s %-30s %-30s %-30s%n", 
+                String productLine = p.getProductLine() != null ? p.getProductLine() : "-";
+
+                System.out.printf("%-20s %-15s %-15s %-25s %-25s %-25s%n", 
                     p.getSlug(), 
-                    p.getStatus(), 
-                    truncate(frontend, 30), 
-                    truncate(backend, 30),
-                    truncate(monitoring, 30)
+                    p.getStatus(),
+                    truncate(productLine, 15),
+                    truncate(frontend, 25), 
+                    truncate(backend, 25),
+                    truncate(monitoring, 25)
                 );
             }
             

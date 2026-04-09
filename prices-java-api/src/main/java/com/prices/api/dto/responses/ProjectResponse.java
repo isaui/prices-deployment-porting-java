@@ -38,6 +38,7 @@ public class ProjectResponse {
 
     private Long userId;
     private String projectType;
+    private String productLine;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

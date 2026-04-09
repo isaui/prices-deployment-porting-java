@@ -11,6 +11,7 @@ import lombok.AllArgsConstructor;
 public class CreateProjectRequest {
     private String name;
     private String description;
+    private String productLine;
     
     @JsonProperty("customFrontendUrl")
     private String customFrontendURL;

@@ -27,6 +27,48 @@
                 },
                 "includeAll": true,
                 "multi": true,
+                "allValue": ".*",
+                "name": "productLine",
+                "options": [],
+                "query": {
+                    "infinityQuery": {
+                        "columns": [],
+                        "data": "",
+                        "filters": [],
+                        "format": "table",
+                        "parser": "backend",
+                        "refId": "",
+                        "root_selector": "",
+                        "source": "url",
+                        "type": "json",
+                        "url": "http://prices-deployment-api:8080/api/monitoring/services/productlines?enabledonly=true",
+                        "url_options": {
+                            "data": "",
+                            "method": "GET"
+                        }
+                    },
+                    "queryType": "infinity",
+                    "refId": "variable"
+                },
+                "refresh": 1,
+                "type": "query"
+            },
+            {
+                "current": {
+                    "text": [
+                        "All"
+                    ],
+                    "value": [
+                        "$__all"
+                    ]
+                },
+                "datasource": {
+                    "type": "yesoreyeram-infinity-datasource",
+                    "uid": "infinity"
+                },
+                "includeAll": true,
+                "multi": true,
+                "allValue": ".*",
                 "name": "service",
                 "options": [],
                 "query": {
@@ -40,7 +82,7 @@
                         "root_selector": "",
                         "source": "url",
                         "type": "json",
-                        "url": "http://prices-deployment-api:8080/api/monitoring/services/slugs?query=All&enabledonly=true",
+                        "url": "http://prices-deployment-api:8080/api/monitoring/services/slugs?query=All&productLine=${productLine:csv}&enabledonly=true",
                         "url_options": {
                             "data": "",
                             "method": "GET"

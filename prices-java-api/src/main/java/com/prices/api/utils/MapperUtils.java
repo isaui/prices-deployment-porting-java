@@ -45,6 +45,7 @@ public class MapperUtils {
 
         resp.setUserId(p.getUserId());
         resp.setProjectType(p.getProjectType());
+        resp.setProductLine(p.getProductLine());
         resp.setCreatedAt(p.getCreatedAt());
         resp.setUpdatedAt(p.getUpdatedAt());
 

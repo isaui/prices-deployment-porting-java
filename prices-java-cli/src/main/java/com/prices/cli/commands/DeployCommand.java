@@ -170,7 +170,7 @@ public class DeployCommand implements Callable<Integer> {
         }
 
         System.out.println("Creating project: " + name);
-        CreateProjectRequest req = new CreateProjectRequest(name, "", cf, cb, cm, exposeMon, null, null);
+        CreateProjectRequest req = new CreateProjectRequest(name, "", null, cf, cb, cm, exposeMon, null, null);
         Project p = client.createProject(req);
         
         System.out.printf("✓ Project created: %s (ID: %d)%n", p.getSlug(), p.getId());

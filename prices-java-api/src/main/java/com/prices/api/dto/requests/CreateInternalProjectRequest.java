@@ -9,6 +9,7 @@ import lombok.Data;
 @Serdeable
 public class CreateInternalProjectRequest {
     private String name;
+    private String productLine;
     private String customFrontendUrl;
     private String customBackendUrl;
     private Integer frontendListeningPort;

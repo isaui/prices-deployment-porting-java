@@ -74,6 +74,7 @@ public class MonitoringController {
     @Secured(SecurityRule.IS_ANONYMOUS)
     public HttpResponse<?> getServiceProductLines(
             @QueryValue(defaultValue = "false") boolean enabledonly) {
+        log.info("[MONITORING] getServiceProductLines enabledonly={}", enabledonly);
         return configHandler.getServiceProductLines(enabledonly);
     }
 
@@ -83,6 +84,7 @@ public class MonitoringController {
             @QueryValue(defaultValue = "All") String query,
             @QueryValue(defaultValue = "All") String productLine,
             @QueryValue(defaultValue = "false") boolean enabledonly) {
+        log.info("[MONITORING] getServiceSlugs query='{}' productLine='{}' enabledonly={}", query, productLine, enabledonly);
         return configHandler.getServiceSlugs(query, productLine, enabledonly);
     }
 
@@ -91,6 +93,7 @@ public class MonitoringController {
     public HttpResponse<?> getServiceFeatures(
             @QueryValue(defaultValue = "All") String query,
             @QueryValue(defaultValue = "false") boolean enabledonly) {
+        log.info("[MONITORING] getServiceFeatures query='{}' enabledonly={}", query, enabledonly);
         return configHandler.getServiceFeatures(query, enabledonly);
     }
 

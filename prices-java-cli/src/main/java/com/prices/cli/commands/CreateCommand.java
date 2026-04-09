@@ -25,7 +25,7 @@ public class CreateCommand implements Callable<Integer> {
     @Option(names = {"-d", "--desc"}, description = "Description")
     private String description;
 
-    @Option(names = {"-p", "--product-line"}, description = "Product line name")
+    @Option(names = {"-p", "--product-line"}, description = "Product line name", required = true)
     private String productLine;
 
     @Option(names = {"--frontend-url"}, description = "Custom frontend domain")

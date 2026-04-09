@@ -45,6 +45,10 @@ public class ProjectServiceImpl implements ProjectService {
     @Override
     @Transactional
     public Project create(Long userId, CreateProjectRequest req) {
+        if (req.getProductLine() == null || req.getProductLine().trim().isEmpty()) {
+            throw new IllegalArgumentException("Product line is required");
+        }
+
         String slug = SlugUtils.generateSlug(req.getName());
         String parentDomain = EnvUtils.getParentDomain();
 

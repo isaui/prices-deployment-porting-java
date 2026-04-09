@@ -26,7 +26,7 @@ public class MonitoringConfigurationServiceImpl implements MonitoringConfigurati
 
     @Override
     public List<MonitoringConfiguration> getConfigurations(String query, boolean enabledOnly) {
-        if (query == null || query.equalsIgnoreCase("All") || query.equals("$__all")) {
+        if (query == null || query.equalsIgnoreCase("All") || query.equals("$__all") || query.equals(".*")) {
             return enabledOnly
                     ? monitoringConfigRepo.findByEnabledTrue()
                     : monitoringConfigRepo.findAll();
@@ -67,13 +67,26 @@ public class MonitoringConfigurationServiceImpl implements MonitoringConfigurati
     @Override
     public List<String> getSlugs(String query, String productLine, boolean enabledOnly) {
         List<MonitoringConfiguration> configs = getConfigurations(query, enabledOnly);
+        boolean filterByProductLine = productLine != null
+                && !productLine.isEmpty()
+                && !productLine.equalsIgnoreCase("All")
+                && !productLine.equals("$__all")
+                && !productLine.equals(".*");
         return configs.stream()
                 .filter(c -> {
-                    if (productLine == null || productLine.equalsIgnoreCase("All") || productLine.equals("$__all")) {
+                    if (!filterByProductLine) {
                         return true;
                     }
-                    return c.getProject() != null
-                            && productLine.equals(c.getProject().getProductLine());
+                    if (c.getProject() == null || c.getProject().getProductLine() == null) {
+                        return false;
+                    }
+                    // Support comma-separated product lines from Grafana multi-select
+                    for (String pl : productLine.split(",")) {
+                        if (pl.trim().equals(c.getProject().getProductLine())) {
+                            return true;
+                        }
+                    }
+                    return false;
                 })
                 .map(c -> c.getProject() != null ? c.getProject().getSlug() : null)
                 .filter(s -> s != null)

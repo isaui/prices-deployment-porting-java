@@ -69,9 +69,6 @@ public class Project {
     @Column(columnDefinition = "varchar(20) default 'regular'")
     private String projectType = "regular";  // "regular" or "ssh"
 
-    @Column
-    private String productLine;
-
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")
     private Map<String, String> envVars;

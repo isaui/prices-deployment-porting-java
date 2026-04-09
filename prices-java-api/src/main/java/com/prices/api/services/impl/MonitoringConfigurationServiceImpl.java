@@ -26,7 +26,7 @@ public class MonitoringConfigurationServiceImpl implements MonitoringConfigurati
 
     @Override
     public List<MonitoringConfiguration> getConfigurations(String query, boolean enabledOnly) {
-        if (query == null || query.equalsIgnoreCase("All") || query.equals("$__all") || query.equals(".*")) {
+        if (query == null || query.equalsIgnoreCase("All") || query.equals("$__all") || query.equals(".*") || query.equals(".+")) {
             return enabledOnly
                     ? monitoringConfigRepo.findByEnabledTrue()
                     : monitoringConfigRepo.findAll();
@@ -71,7 +71,8 @@ public class MonitoringConfigurationServiceImpl implements MonitoringConfigurati
                 && !productLine.isEmpty()
                 && !productLine.equalsIgnoreCase("All")
                 && !productLine.equals("$__all")
-                && !productLine.equals(".*");
+                && !productLine.equals(".*")
+                && !productLine.equals(".+");
         return configs.stream()
                 .filter(c -> {
                     if (!filterByProductLine) {

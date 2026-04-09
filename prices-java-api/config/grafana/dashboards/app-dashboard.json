@@ -27,7 +27,7 @@
                 },
                 "includeAll": true,
                 "multi": true,
-                "allValue": ".*",
+                "allValue": ".+",
                 "name": "productLine",
                 "options": [],
                 "query": {
@@ -68,7 +68,7 @@
                 },
                 "includeAll": true,
                 "multi": true,
-                "allValue": ".*",
+                "allValue": ".+",
                 "name": "service",
                 "options": [],
                 "query": {
@@ -95,7 +95,7 @@
                 "type": "query"
             },
             {
-                "allValue": ".*",
+                "allValue": ".+",
                 "current": {
                     "text": "All",
                     "value": "$__all"

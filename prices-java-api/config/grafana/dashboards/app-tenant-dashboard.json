@@ -27,7 +27,7 @@
                 },
                 "includeAll": true,
                 "multi": true,
-                "allValue": ".*",
+                "allValue": ".+",
                 "name": "service",
                 "options": [],
                 "query": {
@@ -55,7 +55,7 @@
                 "hide": 2
             },
             {
-                "allValue": ".*",
+                "allValue": ".+",
                 "current": {
                     "text": "All",
                     "value": "$__all"

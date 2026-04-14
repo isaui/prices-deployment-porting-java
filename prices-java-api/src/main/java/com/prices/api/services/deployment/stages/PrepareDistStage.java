@@ -270,13 +270,41 @@ public class PrepareDistStage implements PipelineStage {
         Path dbFile = null;
         for (String candidate : candidates) {
             Path p = distPath.resolve(candidate);
+            ctx.addLog(String.format("Checking for static DB: %s -> %s", candidate, Files.exists(p) ? "FOUND" : "NOT FOUND"));
             if (Files.exists(p)) {
                 dbFile = p;
                 break;
             }
         }
 
+        // Fallback: search recursively for the file
         if (dbFile == null) {
+            ctx.addLog("Static DB not found at known paths, searching recursively...");
+            try (Stream<Path> walk = Files.walk(distPath, 10)) {
+                dbFile = walk
+                    .filter(p -> {
+                        String name = p.getFileName().toString();
+                        return name.equals("static-page-db-production.json") || name.equals("static-page-db.json");
+                    })
+                    .sorted((a, b) -> {
+                        // Prefer production over dev
+                        boolean aProd = a.getFileName().toString().contains("production");
+                        boolean bProd = b.getFileName().toString().contains("production");
+                        return Boolean.compare(bProd, aProd);
+                    })
+                    .findFirst()
+                    .orElse(null);
+                
+                if (dbFile != null) {
+                    ctx.addLog("Found static DB via search: " + distPath.relativize(dbFile));
+                }
+            } catch (IOException e) {
+                ctx.addLog("Warning: failed to search for static DB: " + e.getMessage());
+            }
+        }
+
+        if (dbFile == null) {
+            ctx.addLog("No json-server DB file found, skipping static data preparation");
             return false;
         }
 

@@ -143,12 +143,22 @@ public class DatabaseSeedStage implements PipelineStage {
     private void executeSqlFile(Connection conn, Path sqlFile) throws IOException, SQLException {
         String content = Files.readString(sqlFile);
         
-        String[] statements = content.split(";");
+        // Strip single-line comments before splitting by semicolons
+        // This prevents comment text containing semicolons from being split incorrectly
+        StringBuilder cleaned = new StringBuilder();
+        for (String line : content.split("\n")) {
+            String trimmedLine = line.trim();
+            if (!trimmedLine.startsWith("--")) {
+                cleaned.append(line).append("\n");
+            }
+        }
+        
+        String[] statements = cleaned.toString().split(";");
         
         try (Statement stmt = conn.createStatement()) {
             for (String sql : statements) {
                 String trimmed = sql.trim();
-                if (!trimmed.isEmpty() && !trimmed.startsWith("--")) {
+                if (!trimmed.isEmpty()) {
                     stmt.execute(trimmed);
                 }
             }

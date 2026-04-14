@@ -37,6 +37,12 @@ public class DeployCommand implements Callable<Integer> {
     @Option(names = {"-y", "--yes"}, description = "Skip confirmation prompts")
     private boolean skipConfirm;
 
+    @Option(names = {"--frontend"}, description = "Path to frontend directory (use with --backend)")
+    private File frontendPath;
+
+    @Option(names = {"--backend"}, description = "Path to backend directory (use with --frontend)")
+    private File backendPath;
+
     @Option(names = {"--version"}, description = "Deployment version", defaultValue = "1.0.0")
     private String version;
 
@@ -44,14 +50,37 @@ public class DeployCommand implements Callable<Integer> {
 
     @Override
     public Integer call() throws Exception {
-        // 1. Validate path
-        Path absPath = path.toPath().toAbsolutePath();
-        if (!Files.exists(absPath)) {
-            System.err.println("Path does not exist: " + absPath);
+        boolean separateDirs = frontendPath != null || backendPath != null;
+
+        // Validate: --frontend and --backend must both be provided or both absent
+        if ((frontendPath != null) != (backendPath != null)) {
+            System.err.println("Both --frontend and --backend must be specified together.");
             return 1;
         }
-        
-        validateProject(absPath);
+
+        // 1. Validate paths
+        Path absPath = path.toPath().toAbsolutePath();
+        Path absFrontend = null;
+        Path absBackend = null;
+
+        if (separateDirs) {
+            absFrontend = frontendPath.toPath().toAbsolutePath();
+            absBackend = backendPath.toPath().toAbsolutePath();
+            if (!Files.isDirectory(absFrontend)) {
+                System.err.println("Frontend path does not exist or is not a directory: " + absFrontend);
+                return 1;
+            }
+            if (!Files.isDirectory(absBackend)) {
+                System.err.println("Backend path does not exist or is not a directory: " + absBackend);
+                return 1;
+            }
+        } else {
+            if (!Files.exists(absPath)) {
+                System.err.println("Path does not exist: " + absPath);
+                return 1;
+            }
+            validateProject(absPath);
+        }
 
         // 2. Auth
         ConfigManager configManager = new ConfigManager();
@@ -88,7 +117,12 @@ public class DeployCommand implements Callable<Integer> {
 
         // 4. Create Archive
         System.out.println("Preparing files...");
-        Path archivePath = ZipUtil.createProjectArchive(absPath);
+        Path archivePath;
+        if (separateDirs) {
+            archivePath = ZipUtil.createProjectArchive(absFrontend, absBackend);
+        } else {
+            archivePath = ZipUtil.createProjectArchive(absPath);
+        }
         long fileSizeBytes = Files.size(archivePath);
         String fileSize = formatFileSize(fileSizeBytes);
         System.out.printf("Archive created: %s%n", fileSize);

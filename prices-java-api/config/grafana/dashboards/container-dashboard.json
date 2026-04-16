@@ -2,42 +2,29 @@
     "annotations": {
         "list": []
     },
-    "description": "Docker container monitoring powered by Logporter",
+    "description": "Docker container monitoring powered by cAdvisor",
     "editable": true,
     "graphTooltip": 1,
     "schemaVersion": 39,
     "tags": [
         "monitoring",
         "container",
-        "logporter",
+        "cadvisor",
         "Docker"
     ],
     "templating": {
         "list": [
             {
                 "current": {},
-                "definition": "label_values(docker_cpu_usage_total, containerName)",
+                "definition": "label_values(container_cpu_usage_seconds_total{name=~\".+\"}, name)",
                 "includeAll": true,
                 "multi": true,
                 "name": "ContainerName",
                 "query": {
-                    "query": "label_values(docker_cpu_usage_total, containerName)"
+                    "query": "label_values(container_cpu_usage_seconds_total{name=~\".+\"}, name)"
                 },
                 "refresh": 2,
-                "allValue": ".*",
-                "type": "query"
-            },
-            {
-                "current": {},
-                "definition": "label_values(docker_cpu_usage_total, hostname)",
-                "includeAll": true,
-                "multi": true,
-                "name": "HostName",
-                "query": {
-                    "query": "label_values(docker_cpu_usage_total, hostname)"
-                },
-                "refresh": 2,
-                "allValue": ".*",
+                "allValue": ".+",
                 "type": "query"
             }
         ]
@@ -54,30 +41,50 @@
         {
             "type": "row",
             "title": "Basic Metrics",
-            "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 0
+            },
             "collapsed": false,
             "id": 100
         },
         {
             "type": "bargauge",
             "title": "Uptime Containers",
-            "gridPos": { "h": 12, "w": 6, "x": 0, "y": 1 },
+            "gridPos": {
+                "h": 12,
+                "w": 6,
+                "x": 0,
+                "y": 1
+            },
             "id": 1,
-            "datasource": { "type": "prometheus", "uid": "prometheus" },
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
             "targets": [
                 {
-                    "expr": "time() - docker_started_time{containerName=~\"$ContainerName\", hostname=~\"$HostName\"}",
-                    "legendFormat": "{{containerName}}",
+                    "expr": "time() - container_start_time_seconds{name=~\"$ContainerName\"}",
+                    "legendFormat": "{{name}}",
                     "refId": "A"
                 }
             ],
             "fieldConfig": {
                 "defaults": {
-                    "color": { "mode": "thresholds" },
+                    "color": {
+                        "mode": "thresholds"
+                    },
                     "mappings": [],
                     "thresholds": {
                         "mode": "absolute",
-                        "steps": [{ "color": "green", "value": null }]
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            }
+                        ]
                     },
                     "unit": "s"
                 },
@@ -87,7 +94,9 @@
                 "displayMode": "gradient",
                 "orientation": "horizontal",
                 "reduceOptions": {
-                    "calcs": ["lastNotNull"],
+                    "calcs": [
+                        "lastNotNull"
+                    ],
                     "fields": "",
                     "values": false
                 },
@@ -99,23 +108,38 @@
         {
             "type": "stat",
             "title": "Running Containers",
-            "gridPos": { "h": 4, "w": 3, "x": 6, "y": 1 },
+            "gridPos": {
+                "h": 4,
+                "w": 3,
+                "x": 6,
+                "y": 1
+            },
             "id": 2,
-            "datasource": { "type": "prometheus", "uid": "prometheus" },
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
             "targets": [
                 {
-                    "expr": "sum(docker_containers_up_count{hostname=~\"$HostName\"})",
+                    "expr": "count(container_last_seen{name=~\".+\"})",
                     "legendFormat": "__auto",
                     "refId": "A"
                 }
             ],
             "fieldConfig": {
                 "defaults": {
-                    "color": { "mode": "palette-classic" },
+                    "color": {
+                        "mode": "palette-classic"
+                    },
                     "mappings": [],
                     "thresholds": {
                         "mode": "absolute",
-                        "steps": [{ "color": "green", "value": null }]
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            }
+                        ]
                     }
                 },
                 "overrides": []
@@ -123,60 +147,50 @@
             "options": {
                 "colorMode": "value",
                 "graphMode": "none",
-                "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
-                "textMode": "auto"
-            }
-        },
-        {
-            "type": "stat",
-            "title": "Stopped Containers",
-            "gridPos": { "h": 4, "w": 3, "x": 9, "y": 1 },
-            "id": 3,
-            "datasource": { "type": "prometheus", "uid": "prometheus" },
-            "targets": [
-                {
-                    "expr": "sum(docker_containers_down_count{hostname=~\"$HostName\"})",
-                    "legendFormat": "__auto",
-                    "refId": "A"
-                }
-            ],
-            "fieldConfig": {
-                "defaults": {
-                    "color": { "mode": "continuous-RdYlGr" },
-                    "mappings": [],
-                    "thresholds": {
-                        "mode": "absolute",
-                        "steps": [{ "color": "green", "value": null }]
-                    }
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
                 },
-                "overrides": []
-            },
-            "options": {
-                "colorMode": "value",
-                "graphMode": "none",
-                "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
                 "textMode": "auto"
             }
         },
         {
             "type": "stat",
             "title": "CPU Total Usage",
-            "gridPos": { "h": 4, "w": 3, "x": 6, "y": 5 },
+            "gridPos": {
+                "h": 4,
+                "w": 3,
+                "x": 9,
+                "y": 1
+            },
             "id": 4,
-            "datasource": { "type": "prometheus", "uid": "prometheus" },
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
             "targets": [
                 {
-                    "expr": "sum(rate(docker_cpu_usage_total{hostname=~\"$HostName\"}[$__rate_interval]))",
+                    "expr": "sum(rate(container_cpu_usage_seconds_total{name=~\".+\"}[$__rate_interval]))",
                     "legendFormat": "__auto",
                     "refId": "A"
                 }
             ],
             "fieldConfig": {
                 "defaults": {
-                    "color": { "mode": "thresholds" },
+                    "color": {
+                        "mode": "thresholds"
+                    },
                     "thresholds": {
                         "mode": "absolute",
-                        "steps": [{ "color": "green", "value": null }]
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            }
+                        ]
                     },
                     "unit": "percentunit"
                 },
@@ -185,29 +199,50 @@
             "options": {
                 "colorMode": "value",
                 "graphMode": "area",
-                "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
                 "textMode": "auto"
             }
         },
         {
             "type": "stat",
             "title": "Memory Usage",
-            "gridPos": { "h": 4, "w": 3, "x": 9, "y": 5 },
+            "gridPos": {
+                "h": 4,
+                "w": 3,
+                "x": 6,
+                "y": 5
+            },
             "id": 5,
-            "datasource": { "type": "prometheus", "uid": "prometheus" },
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
             "targets": [
                 {
-                    "expr": "sum(docker_memory_usage{hostname=~\"$HostName\"})",
+                    "expr": "sum(container_memory_usage_bytes{name=~\".+\"})",
                     "legendFormat": "__auto",
                     "refId": "A"
                 }
             ],
             "fieldConfig": {
                 "defaults": {
-                    "color": { "mode": "thresholds" },
+                    "color": {
+                        "mode": "thresholds"
+                    },
                     "thresholds": {
                         "mode": "absolute",
-                        "steps": [{ "color": "green", "value": null }]
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            }
+                        ]
                     },
                     "unit": "decbytes"
                 },
@@ -216,34 +251,55 @@
             "options": {
                 "colorMode": "value",
                 "graphMode": "area",
-                "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
                 "textMode": "auto"
             }
         },
         {
             "type": "stat",
             "title": "Network",
-            "gridPos": { "h": 4, "w": 3, "x": 6, "y": 9 },
+            "gridPos": {
+                "h": 4,
+                "w": 3,
+                "x": 9,
+                "y": 5
+            },
             "id": 6,
-            "datasource": { "type": "prometheus", "uid": "prometheus" },
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
             "targets": [
                 {
-                    "expr": "sum(rate(docker_network_received_bytes{hostname=~\"$HostName\"}[1m]))",
+                    "expr": "sum(rate(container_network_receive_bytes_total{name=~\".+\"}[1m]))",
                     "legendFormat": "Input",
                     "refId": "A"
                 },
                 {
-                    "expr": "sum(rate(docker_network_transmit_bytes{hostname=~\"$HostName\"}[1m]))",
+                    "expr": "sum(rate(container_network_transmit_bytes_total{name=~\".+\"}[1m]))",
                     "legendFormat": "Output",
                     "refId": "B"
                 }
             ],
             "fieldConfig": {
                 "defaults": {
-                    "color": { "mode": "palette-classic" },
+                    "color": {
+                        "mode": "palette-classic"
+                    },
                     "thresholds": {
                         "mode": "absolute",
-                        "steps": [{ "color": "green", "value": null }]
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            }
+                        ]
                     },
                     "unit": "Bps"
                 },
@@ -253,34 +309,55 @@
                 "colorMode": "value",
                 "graphMode": "none",
                 "orientation": "horizontal",
-                "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
                 "textMode": "auto"
             }
         },
         {
             "type": "stat",
             "title": "Disk IOps",
-            "gridPos": { "h": 4, "w": 3, "x": 9, "y": 9 },
+            "gridPos": {
+                "h": 4,
+                "w": 3,
+                "x": 6,
+                "y": 9
+            },
             "id": 7,
-            "datasource": { "type": "prometheus", "uid": "prometheus" },
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
             "targets": [
                 {
-                    "expr": "sum(rate(docker_io_read_bytes{hostname=~\"$HostName\"}[1m]))",
+                    "expr": "sum(rate(container_fs_reads_bytes_total{name=~\".+\"}[1m]))",
                     "legendFormat": "Read",
                     "refId": "A"
                 },
                 {
-                    "expr": "sum(rate(docker_io_write_bytes{hostname=~\"$HostName\"}[1m]))",
+                    "expr": "sum(rate(container_fs_writes_bytes_total{name=~\".+\"}[1m]))",
                     "legendFormat": "Write",
                     "refId": "B"
                 }
             ],
             "fieldConfig": {
                 "defaults": {
-                    "color": { "mode": "palette-classic" },
+                    "color": {
+                        "mode": "palette-classic"
+                    },
                     "thresholds": {
                         "mode": "absolute",
-                        "steps": [{ "color": "green", "value": null }]
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            }
+                        ]
                     },
                     "unit": "Bps"
                 },
@@ -290,27 +367,43 @@
                 "colorMode": "value",
                 "graphMode": "none",
                 "orientation": "horizontal",
-                "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
                 "textMode": "auto"
             }
         },
         {
             "type": "timeseries",
             "title": "CPU Total Usage",
-            "description": "User + Kernel = Total",
-            "gridPos": { "h": 12, "w": 12, "x": 12, "y": 1 },
+            "description": "CPU usage per container",
+            "gridPos": {
+                "h": 12,
+                "w": 12,
+                "x": 12,
+                "y": 1
+            },
             "id": 8,
-            "datasource": { "type": "prometheus", "uid": "prometheus" },
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
             "targets": [
                 {
-                    "expr": "rate(docker_cpu_usage_total{containerName=~\"$ContainerName\", hostname=~\"$HostName\"}[$__rate_interval])",
-                    "legendFormat": "{{containerName}}",
+                    "expr": "rate(container_cpu_usage_seconds_total{name=~\"$ContainerName\"}[$__rate_interval])",
+                    "legendFormat": "{{name}}",
                     "refId": "A"
                 }
             ],
             "fieldConfig": {
                 "defaults": {
-                    "color": { "mode": "palette-classic" },
+                    "color": {
+                        "mode": "palette-classic"
+                    },
                     "custom": {
                         "drawStyle": "line",
                         "fillOpacity": 5,
@@ -323,8 +416,14 @@
                     "thresholds": {
                         "mode": "absolute",
                         "steps": [
-                            { "color": "green", "value": null },
-                            { "color": "red", "value": 80 }
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "red",
+                                "value": 80
+                            }
                         ]
                     }
                 },
@@ -332,32 +431,50 @@
             },
             "options": {
                 "legend": {
-                    "calcs": ["lastNotNull", "min", "max", "mean"],
+                    "calcs": [
+                        "lastNotNull",
+                        "min",
+                        "max",
+                        "mean"
+                    ],
                     "displayMode": "table",
                     "placement": "right",
                     "showLegend": true,
                     "sortBy": "Max",
                     "sortDesc": true
                 },
-                "tooltip": { "mode": "single", "sort": "none" }
+                "tooltip": {
+                    "mode": "single",
+                    "sort": "none"
+                }
             }
         },
         {
             "type": "timeseries",
-            "title": "Memory Usage (MByte)",
-            "gridPos": { "h": 12, "w": 24, "x": 0, "y": 13 },
+            "title": "Memory Usage",
+            "gridPos": {
+                "h": 12,
+                "w": 24,
+                "x": 0,
+                "y": 13
+            },
             "id": 9,
-            "datasource": { "type": "prometheus", "uid": "prometheus" },
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
             "targets": [
                 {
-                    "expr": "docker_memory_usage{containerName=~\"$ContainerName\", hostname=~\"$HostName\"}",
-                    "legendFormat": "{{containerName}}",
+                    "expr": "container_memory_usage_bytes{name=~\"$ContainerName\"}",
+                    "legendFormat": "{{name}}",
                     "refId": "A"
                 }
             ],
             "fieldConfig": {
                 "defaults": {
-                    "color": { "mode": "palette-classic" },
+                    "color": {
+                        "mode": "palette-classic"
+                    },
                     "custom": {
                         "drawStyle": "line",
                         "fillOpacity": 5,
@@ -370,8 +487,14 @@
                     "thresholds": {
                         "mode": "absolute",
                         "steps": [
-                            { "color": "green", "value": null },
-                            { "color": "red", "value": 80 }
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "red",
+                                "value": 80
+                            }
                         ]
                     }
                 },
@@ -379,38 +502,56 @@
             },
             "options": {
                 "legend": {
-                    "calcs": ["lastNotNull", "min", "max", "mean"],
+                    "calcs": [
+                        "lastNotNull",
+                        "min",
+                        "max",
+                        "mean"
+                    ],
                     "displayMode": "table",
                     "placement": "bottom",
                     "showLegend": true,
                     "sortBy": "Last *",
                     "sortDesc": true
                 },
-                "tooltip": { "mode": "single", "sort": "none" }
+                "tooltip": {
+                    "mode": "single",
+                    "sort": "none"
+                }
             }
         },
         {
             "type": "timeseries",
             "title": "Network I/O",
             "description": "Network received and transmitted bytes per container",
-            "gridPos": { "h": 12, "w": 12, "x": 0, "y": 25 },
+            "gridPos": {
+                "h": 12,
+                "w": 12,
+                "x": 0,
+                "y": 25
+            },
             "id": 12,
-            "datasource": { "type": "prometheus", "uid": "prometheus" },
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
             "targets": [
                 {
-                    "expr": "rate(docker_network_received_bytes{containerName=~\"$ContainerName\", hostname=~\"$HostName\"}[$__rate_interval])",
-                    "legendFormat": "{{containerName}} rx",
+                    "expr": "rate(container_network_receive_bytes_total{name=~\"$ContainerName\"}[$__rate_interval])",
+                    "legendFormat": "{{name}} rx",
                     "refId": "A"
                 },
                 {
-                    "expr": "rate(docker_network_transmit_bytes{containerName=~\"$ContainerName\", hostname=~\"$HostName\"}[$__rate_interval])",
-                    "legendFormat": "{{containerName}} tx",
+                    "expr": "rate(container_network_transmit_bytes_total{name=~\"$ContainerName\"}[$__rate_interval])",
+                    "legendFormat": "{{name}} tx",
                     "refId": "B"
                 }
             ],
             "fieldConfig": {
                 "defaults": {
-                    "color": { "mode": "palette-classic" },
+                    "color": {
+                        "mode": "palette-classic"
+                    },
                     "custom": {
                         "drawStyle": "line",
                         "fillOpacity": 10,
@@ -423,8 +564,14 @@
                     "thresholds": {
                         "mode": "absolute",
                         "steps": [
-                            { "color": "green", "value": null },
-                            { "color": "red", "value": 80 }
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "red",
+                                "value": 80
+                            }
                         ]
                     }
                 },
@@ -432,36 +579,52 @@
             },
             "options": {
                 "legend": {
-                    "calcs": ["lastNotNull", "mean"],
+                    "calcs": [
+                        "lastNotNull",
+                        "mean"
+                    ],
                     "displayMode": "table",
                     "placement": "bottom",
                     "showLegend": true
                 },
-                "tooltip": { "mode": "multi", "sort": "desc" }
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                }
             }
         },
         {
             "type": "timeseries",
             "title": "Disk I/O",
             "description": "Disk read and write bytes per container",
-            "gridPos": { "h": 12, "w": 12, "x": 12, "y": 25 },
+            "gridPos": {
+                "h": 12,
+                "w": 12,
+                "x": 12,
+                "y": 25
+            },
             "id": 13,
-            "datasource": { "type": "prometheus", "uid": "prometheus" },
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
             "targets": [
                 {
-                    "expr": "rate(docker_io_read_bytes{containerName=~\"$ContainerName\", hostname=~\"$HostName\"}[$__rate_interval])",
-                    "legendFormat": "{{containerName}} read",
+                    "expr": "rate(container_fs_reads_bytes_total{name=~\"$ContainerName\"}[$__rate_interval])",
+                    "legendFormat": "{{name}} read",
                     "refId": "A"
                 },
                 {
-                    "expr": "rate(docker_io_write_bytes{containerName=~\"$ContainerName\", hostname=~\"$HostName\"}[$__rate_interval])",
-                    "legendFormat": "{{containerName}} write",
+                    "expr": "rate(container_fs_writes_bytes_total{name=~\"$ContainerName\"}[$__rate_interval])",
+                    "legendFormat": "{{name}} write",
                     "refId": "B"
                 }
             ],
             "fieldConfig": {
                 "defaults": {
-                    "color": { "mode": "palette-classic" },
+                    "color": {
+                        "mode": "palette-classic"
+                    },
                     "custom": {
                         "drawStyle": "line",
                         "fillOpacity": 10,
@@ -474,8 +637,14 @@
                     "thresholds": {
                         "mode": "absolute",
                         "steps": [
-                            { "color": "green", "value": null },
-                            { "color": "red", "value": 80 }
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "red",
+                                "value": 80
+                            }
                         ]
                     }
                 },
@@ -483,12 +652,18 @@
             },
             "options": {
                 "legend": {
-                    "calcs": ["lastNotNull", "mean"],
+                    "calcs": [
+                        "lastNotNull",
+                        "mean"
+                    ],
                     "displayMode": "table",
                     "placement": "bottom",
                     "showLegend": true
                 },
-                "tooltip": { "mode": "multi", "sort": "desc" }
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                }
             }
         }
     ]

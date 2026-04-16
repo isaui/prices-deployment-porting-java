@@ -118,14 +118,20 @@ services:
       - "traefik.http.services.portainer.loadbalancer.server.port=9000"
     restart: unless-stopped
 
-  logporter:
-    image: lifailon/logporter:latest
-    container_name: prices-logporter
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.51.0
+    container_name: prices-cadvisor
+    privileged: true
+    devices:
+      - /dev/kmsg:/dev/kmsg
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
     networks:
       - prices-network
-      - prices-proxy-network
     restart: unless-stopped
 
   # ============ Observability Stack ============
@@ -237,6 +243,7 @@ services:
       - GF_USERS_ALLOW_ORG_CREATE=false
       - GF_SECURITY_DISABLE_GRAVATAR=true
       - GF_INSTALL_PLUGINS=yesoreyeram-infinity-datasource
+      - DISCORD_WEBHOOK_URL=${DISCORD_WEBHOOK_URL}
     volumes:
       - ./docker-vol/grafana-admin:/var/lib/grafana
       - ./config/grafana/provisioning:/etc/grafana/provisioning:ro

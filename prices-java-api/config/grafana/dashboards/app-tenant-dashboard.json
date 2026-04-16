@@ -127,8 +127,8 @@
             },
             "targets": [
                 {
-                    "expr": "time() - docker_started_time{containerName=~\".*$service.*\"}",
-                    "legendFormat": "{{containerName}}",
+                    "expr": "time() - container_start_time_seconds{name=~\".*$service.*\"}",
+                    "legendFormat": "{{name}}",
                     "refId": "A"
                 }
             ],
@@ -429,8 +429,8 @@
             },
             "targets": [
                 {
-                    "expr": "rate(docker_cpu_usage_total{containerName=~\".*$service.*\"}[$__rate_interval])",
-                    "legendFormat": "{{containerName}}"
+                    "expr": "rate(container_cpu_usage_seconds_total{name=~\".*$service.*\"}[$__rate_interval])",
+                    "legendFormat": "{{name}}"
                 }
             ],
             "fieldConfig": {
@@ -459,8 +459,8 @@
             },
             "targets": [
                 {
-                    "expr": "docker_memory_usage{containerName=~\".*$service.*\"}",
-                    "legendFormat": "{{containerName}}"
+                    "expr": "container_memory_usage_bytes{name=~\".*$service.*\"}",
+                    "legendFormat": "{{name}}"
                 }
             ],
             "fieldConfig": {

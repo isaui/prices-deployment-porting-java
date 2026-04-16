@@ -226,6 +226,46 @@ groups:
           summary: "Container {{ $labels.name }} is down"
           description: "Container {{ $labels.name }} has not been seen for more than 60 seconds."
 
+  - orgId: 1
+    name: traefik-alerts
+    folder: Infrastructure
+    interval: 1m
+    rules:
+      - uid: traefik-high-error-rate
+        title: High HTTP Error Rate
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: prometheus
+            model:
+              expr: sum by (service) (rate(traefik_service_requests_total{job="traefik", code=~"4..|5.."}[5m])) / sum by (service) (rate(traefik_service_requests_total{job="traefik"}[5m])) > 0.05
+              instant: true
+              refId: A
+          - refId: C
+            relativeTimeRange:
+              from: 0
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator:
+                    type: gt
+                    params:
+                      - 0
+              refId: C
+        for: 5m
+        labels:
+          severity: warning
+          layer: application
+        annotations:
+          summary: "High HTTP error rate on {{ $labels.service }}"
+          description: "Service {{ $labels.service }} has error rate {{ $values.A.Value | printf \"%.1f\" }}% (threshold: 5%)."
+
 policies:
   - orgId: 1
     receiver: discord-webhook

@@ -67,6 +67,11 @@ java {
     targetCompatibility = JavaVersion.toVersion("17")
 }
 
+tasks.withType(JavaCompile) {
+    options.fork = true
+    options.forkOptions.jvmArgs << '-Dmicronaut.openapi.views.spec=swagger-ui.enabled=true,rapidoc.enabled=true'
+}
+
 shadowJar {
     mergeServiceFiles()
 }

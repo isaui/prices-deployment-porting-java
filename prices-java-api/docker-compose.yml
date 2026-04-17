@@ -118,21 +118,21 @@ services:
       - "traefik.http.services.portainer.loadbalancer.server.port=9000"
     restart: unless-stopped
 
-  cadvisor:
-    image: gcr.io/cadvisor/cadvisor:v0.51.0
-    container_name: prices-cadvisor
-    privileged: true
-    command:
-      - "--docker_only=true"
-      - "--store_container_labels=true"
-    devices:
-      - /dev/kmsg:/dev/kmsg
+  logporter:
+    image: lifailon/logporter:latest
+    container_name: prices-logporter
     volumes:
-      - /:/rootfs:ro
-      - /var/run:/var/run:rw
-      - /sys:/sys:ro
-      - /var/lib/docker/:/var/lib/docker:ro
-      - /dev/disk/:/dev/disk:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - prices-network
+      - prices-proxy-network
+    restart: unless-stopped
+
+  docker-events-exporter:
+    image: ghcr.io/neuroforgede/docker-engine-events-exporter:latest
+    container_name: prices-docker-events-exporter
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
     networks:
       - prices-network
     restart: unless-stopped

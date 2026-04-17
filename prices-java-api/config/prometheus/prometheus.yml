@@ -3,10 +3,11 @@ global:
   evaluation_interval: 15s
 
 scrape_configs:
-  - job_name: 'cadvisor'
+  - job_name: 'logporter'
     scrape_interval: 5s
+    scrape_timeout: 1s
     static_configs:
-      - targets: ['cadvisor:8080']
+      - targets: ['logporter:9333']
 
   - job_name: 'node-exporter'
     static_configs:
@@ -19,3 +20,8 @@ scrape_configs:
   - job_name: 'traefik'
     static_configs:
       - targets: ['traefik:8080']
+
+  - job_name: 'docker-events'
+    scrape_interval: 5s
+    static_configs:
+      - targets: ['docker-events-exporter:9000']

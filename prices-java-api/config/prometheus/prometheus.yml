@@ -21,7 +21,7 @@ scrape_configs:
     static_configs:
       - targets: ['traefik:8080']
 
-  - job_name: 'docker-events'
+  - job_name: 'docker-state'
     scrape_interval: 5s
     static_configs:
-      - targets: ['docker-events-exporter:9000']
+      - targets: ['docker-events-exporter:8080']

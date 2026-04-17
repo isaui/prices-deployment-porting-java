@@ -129,10 +129,11 @@ services:
     restart: unless-stopped
 
   docker-events-exporter:
-    image: ghcr.io/neuroforgede/docker-engine-events-exporter:latest
-    container_name: prices-docker-events-exporter
+    image: karugaru/docker_state_exporter
+    container_name: prices-docker-state-exporter
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
+    command: ["-listen-address=:8080"]
     networks:
       - prices-network
     restart: unless-stopped

@@ -238,11 +238,11 @@ groups:
         data:
           - refId: A
             relativeTimeRange:
-              from: 300
+              from: 60
               to: 0
             datasourceUid: prometheus
             model:
-              expr: increase(docker_events_container_total{status="die"}[5m]) > 0
+              expr: container_state_status{name!="", state="exited"} == 1
               instant: true
               refId: A
           - refId: C
@@ -259,13 +259,13 @@ groups:
                     params:
                       - 0
               refId: C
-        for: 0s
+        for: 30s
         labels:
           severity: critical
           layer: container
         annotations:
-          summary: "Container {{ $labels.container_attributes_name }} died"
-          description: "Container {{ $labels.container_attributes_name }} died with exit code {{ $labels.container_attributes_exitcode }}."
+          summary: "Container {{ $labels.name }} is down"
+          description: "Container {{ $labels.name }} has exited and is no longer running."
 
   - orgId: 1
     name: traefik-alerts

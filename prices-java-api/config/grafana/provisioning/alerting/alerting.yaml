@@ -242,7 +242,7 @@ groups:
               to: 0
             datasourceUid: prometheus
             model:
-              expr: container_state_status{name!="", state="exited"} == 1
+              expr: container_state_status{status="running"} == 0
               instant: true
               refId: A
           - refId: C
@@ -255,9 +255,9 @@ groups:
               expression: A
               conditions:
                 - evaluator:
-                    type: gt
+                    type: lt
                     params:
-                      - 0
+                      - 1
               refId: C
         for: 30s
         labels:
@@ -265,7 +265,7 @@ groups:
           layer: container
         annotations:
           summary: "Container {{ $labels.name }} is down"
-          description: "Container {{ $labels.name }} has exited and is no longer running."
+          description: "Container {{ $labels.name }} is no longer running."
 
   - orgId: 1
     name: traefik-alerts

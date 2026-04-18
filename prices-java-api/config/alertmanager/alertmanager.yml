@@ -1,5 +1,5 @@
 global:
-  resolve_timeout: 5m
+  resolve_timeout: 1m
 
 route:
   receiver: discord
@@ -12,29 +12,20 @@ receivers:
   - name: discord
     discord_configs:
       - webhook_url: '${DISCORD_WEBHOOK_URL}'
-        title: '{{ if eq .Status "firing" }}🔴 ALERT [FIRING:{{ .Alerts.Firing | len }}]{{ else }}🟢 ALERT [RESOLVED:{{ .Alerts.Resolved | len }}]{{ end }} {{ .GroupLabels.alertname }}'
+        title: '{{ if eq .Status "firing" }}FIRING{{ else }}RESOLVED{{ end }} - {{ .GroupLabels.alertname }}'
         message: |
           {{ if eq .Status "firing" }}
           {{ range .Alerts.Firing }}
-          **Alert:** {{ .Labels.alertname }}
-          **Severity:** {{ .Labels.severity }}
-          **Layer:** {{ .Labels.layer }}
-          **Status:** 🔥 Firing
-          **Since:** {{ .StartsAt.Format "2006-01-02 15:04:05 UTC" }}
+          **{{ .Labels.alertname }}** | {{ .Labels.severity }} | {{ .Labels.layer }}
           {{ .Annotations.summary }}
-          {{ .Annotations.description }}
-          ---
+          Since: {{ .StartsAt.Format "2006-01-02 15:04:05 WIB" }}
           {{ end }}
           {{ else }}
           {{ range .Alerts.Resolved }}
-          **Alert:** {{ .Labels.alertname }}
-          **Layer:** {{ .Labels.layer }}
-          **Status:** ✅ Resolved
-          **Fired at:** {{ .StartsAt.Format "2006-01-02 15:04:05 UTC" }}
-          **Resolved at:** {{ .EndsAt.Format "2006-01-02 15:04:05 UTC" }}
-          **Duration:** {{ .StartsAt | since | humanizeDuration }}
-          The issue that triggered this alert is no longer detected. No action required.
-          ---
+          **{{ .Labels.alertname }}** | {{ .Labels.layer }}
+          Fired at: {{ .StartsAt.Format "2006-01-02 15:04:05 WIB" }}
+          Resolved at: {{ .EndsAt.Format "2006-01-02 15:04:05 WIB" }}
+          The issue is no longer detected.
           {{ end }}
           {{ end }}
         send_resolved: true

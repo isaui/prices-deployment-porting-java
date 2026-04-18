@@ -215,6 +215,7 @@ services:
       - ./docker-vol/alertmanager:/alertmanager
     environment:
       - DISCORD_WEBHOOK_URL=${DISCORD_WEBHOOK_URL}
+      - TZ=Asia/Jakarta
     networks:
       - prices-network
     restart: unless-stopped

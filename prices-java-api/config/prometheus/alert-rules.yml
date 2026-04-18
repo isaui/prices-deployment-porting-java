@@ -65,8 +65,7 @@ groups:
           severity: critical
           layer: container
         annotations:
-          summary: "[CRITICAL] Container {{ $labels.name }} is DOWN"
-          description: "Container {{ $labels.name }} (image: {{ $labels.image }}) stopped running. Check logs: docker logs {{ $labels.name }}"
+          summary: "Container {{ $labels.name }} is down (image: {{ $labels.image }}). Check logs: docker logs {{ $labels.name }}"
 
   - name: traefik-alerts
     interval: 1m

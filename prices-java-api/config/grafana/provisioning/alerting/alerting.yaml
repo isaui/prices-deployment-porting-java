@@ -38,8 +38,8 @@ groups:
           severity: warning
           layer: host
         annotations:
-          summary: "Host CPU usage is above 85%"
-          description: "CPU usage has been {{ $values.A.Value | printf \"%.1f\" }}% for more than 5 minutes."
+          summary: "[WARNING] Host CPU > 85%"
+          description: "CPU usage: {{ $values.A.Value | printf \"%.1f\" }}% (threshold: 85%). Sustained for 5+ minutes. Check running processes or consider scaling."
 
       - uid: host-high-memory
         title: High Memory Usage
@@ -73,8 +73,8 @@ groups:
           severity: warning
           layer: host
         annotations:
-          summary: "Host memory usage is above 90%"
-          description: "Memory usage has been {{ $values.A.Value | printf \"%.1f\" }}% for more than 5 minutes."
+          summary: "[WARNING] Host Memory > 90%"
+          description: "Memory usage: {{ $values.A.Value | printf \"%.1f\" }}% (threshold: 90%). Sustained for 5+ minutes. Possible memory leak or too many containers."
 
       - uid: host-disk-full
         title: Disk Almost Full
@@ -108,8 +108,8 @@ groups:
           severity: critical
           layer: host
         annotations:
-          summary: "Disk usage is above 90%"
-          description: "Root filesystem usage is {{ $values.A.Value | printf \"%.1f\" }}%."
+          summary: "[CRITICAL] Disk usage > 90%"
+          description: "Root filesystem: {{ $values.A.Value | printf \"%.1f\" }}% used (threshold: 90%). Run `docker system prune` or expand disk."
 
   - orgId: 1
     name: postgres-alerts
@@ -148,8 +148,8 @@ groups:
           severity: critical
           layer: database
         annotations:
-          summary: "PostgreSQL is down"
-          description: "PostgreSQL exporter reports pg_up = 0. Database is unreachable."
+          summary: "[CRITICAL] PostgreSQL is DOWN"
+          description: "Database unreachable for 1+ minute. All services depending on DB are affected. Check container status and logs."
 
       - uid: pg-high-connections
         title: High DB Connections
@@ -183,49 +183,8 @@ groups:
           severity: warning
           layer: database
         annotations:
-          summary: "High number of active DB connections"
-          description: "Active PostgreSQL connections: {{ $values.A.Value }}. Threshold: 50."
-
-  # TODO: container-down alert disabled - need proper solution for Docker container monitoring
-  # - orgId: 1
-  #   name: container-alerts
-  #   folder: Infrastructure
-  #   interval: 1m
-  #   rules:
-  #     - uid: container-down
-  #       title: Container Down
-  #       condition: C
-  #       data:
-  #         - refId: A
-  #           relativeTimeRange:
-  #             from: 300
-  #             to: 0
-  #           datasourceUid: prometheus
-  #           model:
-  #             expr: min by (name) (time() - container_last_seen{name=~".+"}) > 60
-  #             instant: true
-  #             refId: A
-  #         - refId: C
-  #           relativeTimeRange:
-  #             from: 0
-  #             to: 0
-  #           datasourceUid: __expr__
-  #           model:
-  #             type: threshold
-  #             expression: A
-  #             conditions:
-  #               - evaluator:
-  #                   type: gt
-  #                   params:
-  #                     - 0
-  #             refId: C
-  #       for: 1m
-  #       labels:
-  #         severity: critical
-  #         layer: container
-  #       annotations:
-  #         summary: "Container {{ $labels.name }} is down"
-  #         description: "Container {{ $labels.name }} has not been seen for more than 60 seconds."
+          summary: "[WARNING] High DB connections"
+          description: "Active connections: {{ $values.A.Value }} (threshold: 50). Sustained for 5+ minutes. Possible connection leak or high load."
 
   - orgId: 1
     name: container-alerts
@@ -264,8 +223,8 @@ groups:
           severity: critical
           layer: container
         annotations:
-          summary: "Container {{ $labels.name }} is down"
-          description: "Container {{ $labels.name }} is no longer running."
+          summary: "[CRITICAL] Container {{ $labels.name }} is DOWN"
+          description: "Container {{ $labels.name }} (image: {{ $labels.image }}) stopped running. Check logs: docker logs {{ $labels.name }}"
 
   - orgId: 1
     name: traefik-alerts
@@ -282,7 +241,7 @@ groups:
               to: 0
             datasourceUid: prometheus
             model:
-              expr: sum by (service) (rate(traefik_service_requests_total{job="traefik", code=~"4..|5.."}[5m])) / sum by (service) (rate(traefik_service_requests_total{job="traefik"}[5m])) > 0.05
+              expr: sum by (service) (rate(traefik_service_requests_total{job="traefik", code=~"5.."}[5m])) / sum by (service) (rate(traefik_service_requests_total{job="traefik"}[5m])) > 0.05
               instant: true
               refId: A
           - refId: C
@@ -304,8 +263,8 @@ groups:
           severity: warning
           layer: application
         annotations:
-          summary: "High HTTP error rate on {{ $labels.service }}"
-          description: "Service {{ $labels.service }} has error rate {{ $values.A.Value | printf \"%.1f\" }}% (threshold: 5%)."
+          summary: "[WARNING] High 5xx error rate on {{ $labels.service }}"
+          description: "Service {{ $labels.service }} returning >5% server errors for 5+ minutes. Check backend logs for the affected service."
 
 policies:
   - orgId: 1
@@ -327,13 +286,12 @@ contactPoints:
           url: ${DISCORD_WEBHOOK_URL}
           use_discord_username: true
           message: |
-            {{ len .Alerts.Firing }} alert(s) firing, {{ len .Alerts.Resolved }} resolved.
+            {{ len .Alerts.Firing }} firing, {{ len .Alerts.Resolved }} resolved
             {{ range .Alerts.Firing }}
-            🔴 **{{ .Labels.alertname }}** [{{ .Labels.severity }}]
             {{ .Annotations.summary }}
             {{ .Annotations.description }}
             {{ end }}
             {{ range .Alerts.Resolved }}
-            ✅ **{{ .Labels.alertname }}** resolved
+            [RESOLVED] {{ .Annotations.summary }}
             {{ end }}
         disableResolveMessage: false

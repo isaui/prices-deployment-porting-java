@@ -12,11 +12,29 @@ receivers:
   - name: discord
     discord_configs:
       - webhook_url: '${DISCORD_WEBHOOK_URL}'
-        title: '{{ if eq .Status "firing" }}[FIRING:{{ .Alerts.Firing | len }}]{{ else }}[RESOLVED:{{ .Alerts.Resolved | len }}]{{ end }} {{ .GroupLabels.alertname }}'
+        title: '{{ if eq .Status "firing" }}🔴 ALERT [FIRING:{{ .Alerts.Firing | len }}]{{ else }}🟢 ALERT [RESOLVED:{{ .Alerts.Resolved | len }}]{{ end }} {{ .GroupLabels.alertname }}'
         message: |
-          {{ range .Alerts }}
-          **{{ .Labels.alertname }}** [{{ .Labels.severity }}]
+          {{ if eq .Status "firing" }}
+          {{ range .Alerts.Firing }}
+          **Alert:** {{ .Labels.alertname }}
+          **Severity:** {{ .Labels.severity }}
+          **Layer:** {{ .Labels.layer }}
+          **Status:** 🔥 Firing
+          **Since:** {{ .StartsAt.Format "2006-01-02 15:04:05 UTC" }}
           {{ .Annotations.summary }}
           {{ .Annotations.description }}
+          ---
+          {{ end }}
+          {{ else }}
+          {{ range .Alerts.Resolved }}
+          **Alert:** {{ .Labels.alertname }}
+          **Layer:** {{ .Labels.layer }}
+          **Status:** ✅ Resolved
+          **Fired at:** {{ .StartsAt.Format "2006-01-02 15:04:05 UTC" }}
+          **Resolved at:** {{ .EndsAt.Format "2006-01-02 15:04:05 UTC" }}
+          **Duration:** {{ .StartsAt | since | humanizeDuration }}
+          The issue that triggered this alert is no longer detected. No action required.
+          ---
+          {{ end }}
           {{ end }}
         send_resolved: true

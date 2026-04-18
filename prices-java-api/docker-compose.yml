@@ -190,6 +190,7 @@ services:
       - "--web.enable-remote-write-receiver"
     volumes:
       - ./config/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./config/prometheus/alert-rules.yml:/etc/prometheus/alert-rules.yml:ro
       - ./docker-vol/prometheus:/prometheus
     networks:
       - prices-network
@@ -199,6 +200,23 @@ services:
       - "traefik.http.routers.prometheus.rule=Host(`prometheus.${PRICES_DOMAIN:-skripsi.isacitra.com}`)"
       - "traefik.http.routers.prometheus.entrypoints=web,websecure"
       - "traefik.http.services.prometheus.loadbalancer.server.port=9090"
+    restart: unless-stopped
+
+  alertmanager:
+    image: prom/alertmanager:v0.28.1
+    container_name: prices-alertmanager
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        cat /etc/alertmanager/alertmanager.yml | sed "s|\$${DISCORD_WEBHOOK_URL}|$$DISCORD_WEBHOOK_URL|g" > /tmp/alertmanager.yml
+        /bin/alertmanager --config.file=/tmp/alertmanager.yml --storage.path=/alertmanager
+    volumes:
+      - ./config/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - ./docker-vol/alertmanager:/alertmanager
+    environment:
+      - DISCORD_WEBHOOK_URL=${DISCORD_WEBHOOK_URL}
+    networks:
+      - prices-network
     restart: unless-stopped
 
   grafana:
@@ -250,7 +268,7 @@ services:
       - GF_SECURITY_DISABLE_GRAVATAR=true
       - GF_SERVER_ROOT_URL=https://grafana.${PRICES_DOMAIN:-skripsi.isacitra.com}
       - GF_INSTALL_PLUGINS=yesoreyeram-infinity-datasource
-      - DISCORD_WEBHOOK_URL=${DISCORD_WEBHOOK_URL}
+      - GF_UNIFIED_ALERTING_ENABLED=false
     volumes:
       - ./docker-vol/grafana-admin:/var/lib/grafana
       - ./config/grafana/provisioning:/etc/grafana/provisioning:ro

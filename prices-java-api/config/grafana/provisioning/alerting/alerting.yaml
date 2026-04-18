@@ -193,7 +193,7 @@ groups:
     rules:
       - uid: container-died
         title: Container Died
-        condition: C
+        condition: A
         data:
           - refId: A
             relativeTimeRange:
@@ -204,20 +204,6 @@ groups:
               expr: container_state_status{status="running"} == 0
               instant: true
               refId: A
-          - refId: C
-            relativeTimeRange:
-              from: 0
-              to: 0
-            datasourceUid: __expr__
-            model:
-              type: threshold
-              expression: A
-              conditions:
-                - evaluator:
-                    type: lt
-                    params:
-                      - 1
-              refId: C
         for: 30s
         labels:
           severity: critical
@@ -233,7 +219,7 @@ groups:
     rules:
       - uid: traefik-high-error-rate
         title: High HTTP Error Rate
-        condition: C
+        condition: A
         data:
           - refId: A
             relativeTimeRange:
@@ -244,20 +230,6 @@ groups:
               expr: sum by (service) (rate(traefik_service_requests_total{job="traefik", code=~"5.."}[5m])) / sum by (service) (rate(traefik_service_requests_total{job="traefik"}[5m])) > 0.05
               instant: true
               refId: A
-          - refId: C
-            relativeTimeRange:
-              from: 0
-              to: 0
-            datasourceUid: __expr__
-            model:
-              type: threshold
-              expression: A
-              conditions:
-                - evaluator:
-                    type: gt
-                    params:
-                      - 0
-              refId: C
         for: 5m
         labels:
           severity: warning

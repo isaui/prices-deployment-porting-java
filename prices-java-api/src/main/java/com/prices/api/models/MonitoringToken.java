@@ -23,6 +23,10 @@ public class MonitoringToken {
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "project_slug", referencedColumnName = "slug", insertable = false, updatable = false)
+    private Project project;
+
     @PrePersist
     protected void onCreate() {
         if (id == null) {

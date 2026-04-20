@@ -8,16 +8,21 @@ import lombok.extern.slf4j.Slf4j;
 import jakarta.annotation.PreDestroy;
 import jakarta.inject.Singleton;
 
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantLock;
 
 @Slf4j
 @Singleton
 public class DeploymentQueue {
 
     private static final int MAX_CONCURRENT = 3;
+
+    // Per-slug locks to prevent concurrent deployments for the same project
+    private final ConcurrentHashMap<String, ReentrantLock> slugLocks = new ConcurrentHashMap<>();
 
     @Data
     public static class DeploymentTask {
@@ -53,13 +58,20 @@ public class DeploymentQueue {
                     log.info("Dispatching deployment #{} for project {}",
                             task.getDeployment().getId(), task.getProject().getSlug());
                     workers.submit(() -> {
+                        String slug = task.getProject().getSlug();
+                        ReentrantLock lock = slugLocks.computeIfAbsent(
+                            slug, k -> new ReentrantLock());
+                        lock.lock();
                         try {
                             if (consumer != null) {
-                                consumer.accept(task.getDeployment(), task.getProject(), task.getRequest());
+                                consumer.accept(task.getDeployment(),
+                                    task.getProject(), task.getRequest());
                             }
                         } catch (Exception e) {
                             log.error("Deployment #{} failed unexpectedly",
                                     task.getDeployment().getId(), e);
+                        } finally {
+                            lock.unlock();
                         }
                     });
                 } catch (InterruptedException e) {

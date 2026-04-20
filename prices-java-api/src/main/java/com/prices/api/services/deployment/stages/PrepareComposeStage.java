@@ -59,7 +59,7 @@ public class PrepareComposeStage implements PipelineStage {
         // Backend
         sb.append("  backend:\n");
         sb.append("    build:\n");
-        sb.append("      context: ./backend-dist\n");
+        sb.append("      context: ./backend\n");
         sb.append("      dockerfile: Dockerfile\n");
         sb.append("    image: ").append(backendContainer).append(":latest\n");
         sb.append("    container_name: ").append(backendContainer).append("\n");
@@ -80,7 +80,7 @@ public class PrepareComposeStage implements PipelineStage {
         // Frontend
         sb.append("  frontend:\n");
         sb.append("    build:\n");
-        sb.append("      context: ./frontend-dist\n");
+        sb.append("      context: ./frontend\n");
         sb.append("      dockerfile: Dockerfile\n");
 
         // Frontend args

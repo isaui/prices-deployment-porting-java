@@ -1,0 +1,81 @@
+Enum DeploymentStatus {
+  PENDING
+  QUEUED
+  IN_PROGRESS
+  SUCCESS
+  FAILED
+}
+
+Table users {
+  id Int [pk, increment]
+  username String [unique, not null]
+  email String [unique, not null]
+  password String [not null]
+  role String [default: 'developer']
+  createdAt DateTime [default: `now()`]
+  updatedAt DateTime
+  deletedAt DateTime
+}
+
+Table projects {
+  id Int [pk, increment]
+  name String [not null]
+  productLine String
+  slug String [unique, not null]
+  description String
+  status String [default: 'pending']
+
+  defaultFrontendUrl String [unique]
+  customFrontendUrl String [unique]
+
+  defaultBackendUrl String
+  customBackendUrl String
+
+  frontendListeningPort Int [default: 80]
+  backendListeningPort Int [default: 7776]
+
+  userId Int [not null]
+  projectType String [default: 'regular']
+  envVars Json
+
+  createdAt DateTime [default: `now()`]
+  updatedAt DateTime
+  deletedAt DateTime
+}
+
+Table deployment_histories {
+  id Int [pk, increment]
+  projectId Int [not null]
+  userId Int
+  status DeploymentStatus [default: 'PENDING']
+  version String
+  environment String [default: 'production']
+  logs String
+  startedAt DateTime
+  finishedAt DateTime
+  createdAt DateTime [default: `now()`]
+  updatedAt DateTime
+  deletedAt DateTime
+}
+
+Table monitoring_configurations {
+  id Int [pk, increment]
+  projectId Int [unique, not null]
+  enabled Boolean [default: false]
+  features Json
+  createdAt DateTime [default: `now()`]
+  updatedAt DateTime
+}
+
+Table monitoring_tokens {
+  id String [pk]
+  projectId Int [not null]
+  expiredAt DateTime [not null]
+  createdAt DateTime [default: `now()`]
+}
+
+Ref: projects.userId > users.id
+Ref: deployment_histories.projectId > projects.id
+Ref: deployment_histories.userId > users.id
+Ref: monitoring_configurations.projectId - projects.id
+Ref: monitoring_tokens.projectId > projects.id

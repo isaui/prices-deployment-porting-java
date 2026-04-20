@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Map;
 
 @Data
-@EqualsAndHashCode(exclude = {"user", "deploymentHistories", "monitoringConfiguration"})
+@EqualsAndHashCode(exclude = {"user", "deploymentHistories", "monitoringConfiguration", "monitoringTokens"})
 @Entity
 @Table(name = "projects")
 public class Project {
@@ -90,6 +90,9 @@ public class Project {
 
     @OneToOne(mappedBy = "project", cascade = CascadeType.REMOVE)
     private MonitoringConfiguration monitoringConfiguration;
+
+    @OneToMany(mappedBy = "project", cascade = CascadeType.REMOVE)
+    private List<MonitoringToken> monitoringTokens;
 
     @PrePersist
     protected void onCreate() {

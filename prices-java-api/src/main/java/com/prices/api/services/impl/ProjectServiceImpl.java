@@ -8,6 +8,7 @@ import com.prices.api.models.DeploymentHistory;
 import com.prices.api.models.Project;
 import com.prices.api.repositories.DeploymentHistoryRepository;
 import com.prices.api.repositories.MonitoringConfigurationRepository;
+import com.prices.api.repositories.MonitoringTokenRepository;
 import com.prices.api.repositories.ProjectRepository;
 import com.prices.api.services.ProjectService;
 import com.prices.api.services.deployment.DeploymentContext;
@@ -40,6 +41,7 @@ public class ProjectServiceImpl implements ProjectService {
     private final ProjectRepository projectRepo;
     private final DeploymentHistoryRepository deploymentRepo;
     private final MonitoringConfigurationRepository monitoringConfigRepo;
+    private final MonitoringTokenRepository monitoringTokenRepo;
     private final DatabaseConfig databaseConfig;
 
     @Override
@@ -219,13 +221,16 @@ public class ProjectServiceImpl implements ProjectService {
             // Continue with database deletion
         }
 
-        // 3. Delete monitoring configuration first (FK constraint)
+        // 3. Delete monitoring tokens (by slug, no FK constraint but needs cleanup)
+        monitoringTokenRepo.deleteByProjectSlug(project.getSlug());
+
+        // 4. Delete monitoring configuration (FK constraint)
         monitoringConfigRepo.deleteByProjectId(id);
 
-        // 4. Delete deployment histories (FK constraint)
+        // 5. Delete deployment histories (FK constraint)
         deploymentRepo.deleteByProjectId(id);
         
-        // 4. Delete project from database
+        // 6. Delete project from database
         projectRepo.deleteById(id);
     }
 

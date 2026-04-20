@@ -13,4 +13,6 @@ public interface MonitoringTokenRepository extends CrudRepository<MonitoringToke
     List<MonitoringToken> findByProjectSlug(String projectSlug);
 
     Optional<MonitoringToken> findByIdAndProjectSlug(String id, String projectSlug);
+
+    void deleteByProjectSlug(String projectSlug);
 }

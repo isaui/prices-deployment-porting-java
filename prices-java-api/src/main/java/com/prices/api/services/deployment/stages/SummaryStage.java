@@ -40,17 +40,6 @@ public class SummaryStage implements PipelineStage {
             ctx.addLog("    Custom:  " + NamingUtils.fullURL(ctx.getCustomBackendURL()));
         }
         
-        // Monitoring URLs (if exposed)
-        if (ctx.isNeedMonitoringExposed()) {
-            ctx.addLog("  Monitoring:");
-            if (ctx.isDefaultMonitoringActive() && ctx.getDefaultMonitoringURL() != null) {
-                ctx.addLog("    Default: " + NamingUtils.fullURL(ctx.getDefaultMonitoringURL()));
-            }
-            if (ctx.isCustomMonitoringActive() && ctx.getCustomMonitoringURL() != null) {
-                ctx.addLog("    Custom:  " + NamingUtils.fullURL(ctx.getCustomMonitoringURL()));
-            }
-        }
-        
         ctx.addLog("");
         ctx.addLog("===========================================");
     }

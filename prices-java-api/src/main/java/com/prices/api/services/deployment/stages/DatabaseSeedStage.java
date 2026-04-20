@@ -27,12 +27,13 @@ public class DatabaseSeedStage implements PipelineStage {
     public void execute(DeploymentContext ctx) {
         try {
 
-            if (ctx.getBackendDistPath() == null) {
+            if (!ctx.isHasBackend()) {
                 ctx.addLog("No backend found, skipping database seeding");
                 return;
             }
 
-            List<Path> seedFiles = findSeedFiles(ctx.getBackendDistPath());
+            Path backendPath = ctx.getExtractedPath().resolve("backend");
+            List<Path> seedFiles = findSeedFiles(backendPath);
             if (seedFiles.isEmpty()) {
                 ctx.addLog("No seed files found, skipping database seeding");
                 return;
@@ -73,15 +74,15 @@ public class DatabaseSeedStage implements PipelineStage {
         ctx.addLog("Database seeding rollback not supported (data already inserted)");
     }
 
-    private List<Path> findSeedFiles(Path backendDistPath) throws IOException {
+    private List<Path> findSeedFiles(Path backendPath) throws IOException {
         List<Path> seedFiles = new ArrayList<>();
 
-        Path seedSql = backendDistPath.resolve("seed.sql");
+        Path seedSql = backendPath.resolve("seed.sql");
         if (Files.exists(seedSql) && Files.isRegularFile(seedSql)) {
             seedFiles.add(seedSql);
         }
 
-        Path seedDir = backendDistPath.resolve("seed");
+        Path seedDir = backendPath.resolve("seed");
         if (Files.exists(seedDir) && Files.isDirectory(seedDir)) {
             try (Stream<Path> files = Files.list(seedDir)) {
                 files.filter(p -> p.toString().endsWith(".sql"))
@@ -90,7 +91,7 @@ public class DatabaseSeedStage implements PipelineStage {
             }
         }
 
-        Path sqlDir = backendDistPath.resolve("sql");
+        Path sqlDir = backendPath.resolve("sql");
         if (Files.exists(sqlDir) && Files.isDirectory(sqlDir)) {
             try (Stream<Path> files = Files.list(sqlDir)) {
                 files.filter(p -> p.toString().endsWith(".sql"))

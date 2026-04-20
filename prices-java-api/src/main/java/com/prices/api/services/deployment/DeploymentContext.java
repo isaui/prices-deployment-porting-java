@@ -33,13 +33,6 @@ public class DeploymentContext {
     private boolean isDefaultBackendActive;
     private boolean isCustomBackendActive;
 
-    // Monitoring URLs
-    private String defaultMonitoringURL;
-    private String customMonitoringURL;
-    private boolean isDefaultMonitoringActive;
-    private boolean isCustomMonitoringActive;
-    private boolean needMonitoringExposed;
-
     // Listening ports (for Traefik routing)
     private int frontendListeningPort = 80;
     private int backendListeningPort = 7776;
@@ -63,8 +56,9 @@ public class DeploymentContext {
     private Path extractedPath;
     private Path composePath;
     private boolean hasUserCompose;
-    private Path frontendDistPath;
-    private Path backendDistPath;
+    private boolean hasFrontend;
+    private boolean hasBackend;
+    private boolean hasStaticData;
     private String networkName;
 
     // Output
@@ -101,12 +95,6 @@ public class DeploymentContext {
         ctx.setCustomBackendURL(project.getCustomBackendUrl());
         ctx.setDefaultBackendActive(project.isDefaultBackendActive());
         ctx.setCustomBackendActive(project.isCustomBackendActive());
-
-        ctx.setDefaultMonitoringURL(project.getDefaultMonitoringUrl());
-        ctx.setCustomMonitoringURL(project.getCustomMonitoringUrl());
-        ctx.setDefaultMonitoringActive(project.isDefaultMonitoringActive());
-        ctx.setCustomMonitoringActive(project.isCustomMonitoringActive());
-        ctx.setNeedMonitoringExposed(project.isNeedMonitoringExposed());
 
         ctx.setFrontendListeningPort(project.getFrontendListeningPort() != null ? project.getFrontendListeningPort() : 80);
         ctx.setBackendListeningPort(project.getBackendListeningPort() != null ? project.getBackendListeningPort() : 7776);

@@ -119,7 +119,7 @@ services:
     restart: unless-stopped
 
   logporter:
-    image: lifailon/logporter@sha256:aa09bd69f71a
+    image: lifailon/logporter@sha256:c776dabc14975333c2c2fafac65244caaebaa8189278d14f641b116029310098
     container_name: prices-logporter
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
@@ -129,7 +129,7 @@ services:
     restart: unless-stopped
 
   docker-events-exporter:
-    image: karugaru/docker_state_exporter@sha256:99d984a57dd1
+    image: karugaru/docker_state_exporter@sha256:99d984a57dd11d0d3b53d56481dec51be7a0ad7c2a7aa80a95db2facd294c60a
     container_name: prices-docker-state-exporter
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro

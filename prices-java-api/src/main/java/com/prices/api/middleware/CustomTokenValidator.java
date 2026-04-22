@@ -29,14 +29,11 @@ public class CustomTokenValidator implements TokenValidator {
             try {
                 log.info("Validating token for request: {}", request.getClass().getSimpleName());
                 
-                // Use our existing AuthService which uses JJWT (same logic as Go)
                 User user = authService.validateToken(token);
                 
                 log.info("Token validation successful for user: {} (ID: {})", user.getUsername(), user.getId());
                 
                 // Create Micronaut Authentication object
-                // We use user.getId().toString() as the principal name (userId)
-                // This matches controllers: Long.parseLong(principal.getName())
                 Collection<String> roles = Collections.singletonList(user.getRole());
                 Map<String, Object> attributes = Map.of(
                     "user", user,

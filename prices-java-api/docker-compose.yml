@@ -119,7 +119,7 @@ services:
     restart: unless-stopped
 
   logporter:
-    image: lifailon/logporter:latest
+    image: lifailon/logporter@sha256:aa09bd69f71a
     container_name: prices-logporter
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
@@ -129,7 +129,7 @@ services:
     restart: unless-stopped
 
   docker-events-exporter:
-    image: karugaru/docker_state_exporter
+    image: karugaru/docker_state_exporter@sha256:99d984a57dd1
     container_name: prices-docker-state-exporter
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro

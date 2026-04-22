@@ -5,8 +5,11 @@ import com.prices.api.services.deployment.PipelineStage;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
+import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -36,6 +39,9 @@ public class PrepareFrontendDistStage implements PipelineStage {
         FrontendRootInfo rootInfo = findFrontendRoot(frontendPath);
         ctx.addLog(String.format("Frontend root found via %s: %s",
             rootInfo.marker, rootInfo.path));
+
+        // Patch useAppearance.js with default fallback if needed
+        patchUseAppearanceFallback(rootInfo.path, ctx);
 
         // Generate .dockerignore if not present
         Path dockerignorePath = rootInfo.path.resolve(".dockerignore");
@@ -107,6 +113,48 @@ public class PrepareFrontendDistStage implements PipelineStage {
             return new FrontendRootInfo(distPath, "static");
 
         throw new IOException("could not find frontend root");
+    }
+
+    private void patchUseAppearanceFallback(Path frontendRoot,
+            DeploymentContext ctx) throws IOException {
+        final Path[] found = {null};
+        Files.walkFileTree(frontendRoot, new SimpleFileVisitor<>() {
+            @Override
+            public FileVisitResult visitFile(Path file,
+                    BasicFileAttributes attrs) {
+                if (file.getFileName().toString()
+                        .equals("useAppearance.js")) {
+                    found[0] = file;
+                    return FileVisitResult.TERMINATE;
+                }
+                return FileVisitResult.CONTINUE;
+            }
+
+            @Override
+            public FileVisitResult preVisitDirectory(Path dir,
+                    BasicFileAttributes attrs) {
+                if (dir.getFileName().toString().equals("node_modules")) {
+                    return FileVisitResult.SKIP_SUBTREE;
+                }
+                return FileVisitResult.CONTINUE;
+            }
+        });
+
+        if (found[0] == null) {
+            return;
+        }
+
+        String content = Files.readString(found[0]);
+        String target = "return INTERFACE_KITS[kitName];";
+        String replacement =
+            "return INTERFACE_KITS[kitName] ?? INTERFACE_KITS[\"donor\"];";
+
+        if (content.contains(target)) {
+            String patched = content.replace(target, replacement);
+            Files.writeString(found[0], patched);
+            ctx.addLog("Patched useAppearance.js with default appearance "
+                + "fallback");
+        }
     }
 
     private void generateDockerignore(Path rootPath, String marker)

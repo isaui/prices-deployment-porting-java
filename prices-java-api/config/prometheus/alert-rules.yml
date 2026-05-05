@@ -1,49 +1,49 @@
 groups:
   - name: host-alerts
-    interval: 1m
+    interval: 15s
     rules:
       - alert: HighCPUUsage
-        expr: 100 - (avg(rate(node_cpu_seconds_total{job="node-exporter", mode="idle"}[5m])) * 100) > 85
-        for: 5m
+        expr: 100 - (avg(rate(node_cpu_seconds_total{job="node-exporter", mode="idle"}[1m])) * 100) > 1
+        for: 1m
         labels:
           severity: warning
           layer: host
         annotations:
-          summary: "Host CPU usage above 85%"
-          description: "Current: {{ $value | printf \"%.1f\" }}%. Has been high for over 5 minutes."
+          summary: "Host CPU usage above threshold"
+          description: "Current: {{ $value | printf \"%.1f\" }}%."
 
       - alert: HighMemoryUsage
-        expr: (1 - (node_memory_MemAvailable_bytes{job="node-exporter"} / node_memory_MemTotal_bytes{job="node-exporter"})) * 100 > 90
-        for: 5m
+        expr: (1 - (node_memory_MemAvailable_bytes{job="node-exporter"} / node_memory_MemTotal_bytes{job="node-exporter"})) * 100 > 1
+        for: 1m
         labels:
           severity: warning
           layer: host
         annotations:
-          summary: "Host memory usage above 90%"
-          description: "Current: {{ $value | printf \"%.1f\" }}%. Has been high for over 5 minutes."
+          summary: "Host memory usage above threshold"
+          description: "Current: {{ $value | printf \"%.1f\" }}%."
 
       - alert: DiskAlmostFull
-        expr: 100 - (node_filesystem_avail_bytes{job="node-exporter", fstype!~"tmpfs|overlay|squashfs", mountpoint="/"} / node_filesystem_size_bytes{job="node-exporter", fstype!~"tmpfs|overlay|squashfs", mountpoint="/"} * 100) > 90
-        for: 5m
+        expr: 100 - (node_filesystem_avail_bytes{job="node-exporter", fstype!~"tmpfs|overlay|squashfs", mountpoint="/"} / node_filesystem_size_bytes{job="node-exporter", fstype!~"tmpfs|overlay|squashfs", mountpoint="/"} * 100) > 1
+        for: 30s
         labels:
           severity: critical
           layer: host
         annotations:
-          summary: "Root disk usage above 90%"
-          description: "Current: {{ $value | printf \"%.1f\" }}% used. Consider running docker system prune or expanding disk."
+          summary: "Root disk usage above threshold"
+          description: "Current: {{ $value | printf \"%.1f\" }}% used."
 
   - name: postgres-alerts
-    interval: 1m
+    interval: 15s
     rules:
       - alert: PostgreSQLDown
         expr: pg_up{job="postgres-exporter"} == 0
-        for: 1m
+        for: 30s
         labels:
           severity: critical
           layer: database
         annotations:
           summary: "PostgreSQL is unreachable"
-          description: "Database has been down for over 1 minute."
+          description: "Database has been down for over 30 seconds."
 
       - alert: HighDBConnections
         expr: sum(pg_stat_activity_count{job="postgres-exporter", state="active"}) > 50
@@ -53,7 +53,7 @@ groups:
           layer: database
         annotations:
           summary: "High number of active DB connections"
-          description: "Active connections: {{ $value }}. Has been above 50 for over 5 minutes."
+          description: "Active connections: {{ $value }}."
 
   - name: container-alerts
     interval: 15s
@@ -69,14 +69,14 @@ groups:
           description: "Image: {{ $labels.image }}. Check logs: docker logs {{ $labels.name }}"
 
   - name: traefik-alerts
-    interval: 1m
+    interval: 15s
     rules:
       - alert: HighHTTPErrorRate
-        expr: sum by (service) (rate(traefik_service_requests_total{job="traefik", code=~"5.."}[5m])) / sum by (service) (rate(traefik_service_requests_total{job="traefik"}[5m])) > 0.05
-        for: 5m
+        expr: sum by (service) (rate(traefik_service_requests_total{job="traefik", code=~"5.."}[1m])) / sum by (service) (rate(traefik_service_requests_total{job="traefik"}[1m])) > 0.01
+        for: 1m
         labels:
           severity: warning
           layer: application
         annotations:
           summary: "High 5xx error rate on {{ $labels.service }}"
-          description: "More than 5% of requests are returning server errors for over 5 minutes."
+          description: "More than 1% of requests are returning server errors."

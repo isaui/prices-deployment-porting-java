@@ -72,11 +72,11 @@ groups:
     interval: 15s
     rules:
       - alert: HighHTTPErrorRate
-        expr: sum by (service) (rate(traefik_service_requests_total{job="traefik", code=~"5.."}[1m])) / sum by (service) (rate(traefik_service_requests_total{job="traefik"}[1m])) > 0.01
+        expr: sum by (service) (rate(traefik_service_requests_total{job="traefik", code=~"4..|5.."}[1m])) / sum by (service) (rate(traefik_service_requests_total{job="traefik"}[1m])) > 0.01
         for: 1m
         labels:
           severity: warning
           layer: application
         annotations:
-          summary: "High 5xx error rate on {{ $labels.service }}"
-          description: "More than 1% of requests are returning server errors."
+          summary: "High error rate on {{ $labels.service }}"
+          description: "More than 1% of requests are returning 4xx/5xx errors."

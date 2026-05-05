@@ -36,7 +36,7 @@ groups:
     interval: 15s
     rules:
       - alert: PostgreSQLDown
-        expr: pg_up{job="postgres-exporter"} == 0
+        expr: pg_up{job="postgres-exporter"} == 0 or absent(pg_up{job="postgres-exporter"})
         for: 30s
         labels:
           severity: critical

@@ -93,6 +93,17 @@ public class DeploymentQueue {
     public int getQueueSize() {
         return queue.size();
     }
+    
+    public int getQueuePosition(Long deploymentId) {
+        int position = 1;
+        for (DeploymentTask task : queue) {
+            if (task.getDeployment().getId().equals(deploymentId)) {
+                return position;
+            }
+            position++;
+        }
+        return -1; // Not in queue (already processing or finished)
+    }
 
     @PreDestroy
     public void shutdown() {

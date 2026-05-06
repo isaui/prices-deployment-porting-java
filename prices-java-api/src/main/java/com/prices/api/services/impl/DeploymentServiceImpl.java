@@ -24,12 +24,14 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Sinks;
 
 import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Slf4j
 @Singleton
@@ -45,11 +47,20 @@ public class DeploymentServiceImpl implements DeploymentService {
 
     // Active log streams
     private final Map<Long, Sinks.Many<String>> logSinks = new ConcurrentHashMap<>();
+    
+    // Heartbeat scheduler for queued deployments
+    private final ScheduledExecutorService heartbeatScheduler = Executors.newScheduledThreadPool(1);
+    private final Map<Long, ScheduledFuture<?>> heartbeatTasks = new ConcurrentHashMap<>();
 
     @PostConstruct
     void init() {
         deploymentQueue.setConsumer(this::executeDeployment);
         deploymentQueue.start();
+    }
+    
+    @PreDestroy
+    void cleanup() {
+        heartbeatScheduler.shutdownNow();
     }
 
     @Override
@@ -74,7 +85,34 @@ public class DeploymentServiceImpl implements DeploymentService {
 
         int queueSize = deploymentQueue.getQueueSize();
         if (queueSize > 0) {
-            logSink.tryEmitNext(String.format("Deployment queued (position: %d). Waiting for available slot...", queueSize + 1));
+            int position = queueSize + 1; // Initial position
+            logSink.tryEmitNext(String.format("Deployment queued at position %d. Waiting for available slot...", position));
+            
+            // Start heartbeat to keep SSE connection alive while in queue
+            AtomicInteger heartbeatCount = new AtomicInteger(0);
+            ScheduledFuture<?> heartbeat = heartbeatScheduler.scheduleAtFixedRate(() -> {
+                try {
+                    DeploymentHistory current = deploymentRepo.findById(dep.getId()).orElse(null);
+                    if (current != null && current.getStatus() == DeploymentStatus.QUEUED) {
+                        int currentPosition = deploymentQueue.getQueuePosition(dep.getId());
+                        if (currentPosition > 0) {
+                            int elapsed = heartbeatCount.incrementAndGet() * 30; // seconds
+                            logSink.tryEmitNext(String.format("Queue position: %d | Elapsed: %ds", 
+                                currentPosition, elapsed));
+                        }
+                    } else {
+                        // Deployment started or finished, cancel heartbeat
+                        ScheduledFuture<?> task = heartbeatTasks.remove(dep.getId());
+                        if (task != null) {
+                            task.cancel(false);
+                        }
+                    }
+                } catch (Exception e) {
+                    log.warn("Heartbeat error for deployment {}: {}", dep.getId(), e.getMessage());
+                }
+            }, 30, 30, TimeUnit.SECONDS);
+            
+            heartbeatTasks.put(dep.getId(), heartbeat);
         } else {
             logSink.tryEmitNext("Deployment queued. Starting shortly...");
         }
@@ -123,6 +161,12 @@ public class DeploymentServiceImpl implements DeploymentService {
     }
 
     private void executeDeployment(DeploymentHistory dep, Project project, DeployRequest req) {
+        // Cancel heartbeat if still running
+        ScheduledFuture<?> heartbeat = heartbeatTasks.remove(dep.getId());
+        if (heartbeat != null) {
+            heartbeat.cancel(false);
+        }
+        
         // Mark as IN_PROGRESS now that it's dequeued
         updateDeploymentStatus(dep, DeploymentStatus.IN_PROGRESS, null);
 

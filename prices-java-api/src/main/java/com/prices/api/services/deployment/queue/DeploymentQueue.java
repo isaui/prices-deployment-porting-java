@@ -12,6 +12,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -19,7 +20,10 @@ import java.util.concurrent.locks.ReentrantLock;
 @Singleton
 public class DeploymentQueue {
 
-    private static final int MAX_CONCURRENT = 3;
+    private static final int MAX_CONCURRENT = 5;
+
+    // Semaphore to enforce concurrent limit
+    private final Semaphore concurrentSlots = new Semaphore(MAX_CONCURRENT);
 
     // Per-slug locks to prevent concurrent deployments for the same project
     private final ConcurrentHashMap<String, ReentrantLock> slugLocks = new ConcurrentHashMap<>();
@@ -57,6 +61,10 @@ public class DeploymentQueue {
                     DeploymentTask task = queue.take();
                     log.info("Dispatching deployment #{} for project {}",
                             task.getDeployment().getId(), task.getProject().getSlug());
+                    
+                    // Acquire semaphore slot (blocks if all slots are taken)
+                    concurrentSlots.acquire();
+                    
                     workers.submit(() -> {
                         String slug = task.getProject().getSlug();
                         ReentrantLock lock = slugLocks.computeIfAbsent(
@@ -72,6 +80,10 @@ public class DeploymentQueue {
                                     task.getDeployment().getId(), e);
                         } finally {
                             lock.unlock();
+                            // Release semaphore slot when done
+                            concurrentSlots.release();
+                            log.info("Released deployment slot. Available slots: {}", 
+                                concurrentSlots.availablePermits());
                         }
                     });
                 } catch (InterruptedException e) {
@@ -92,6 +104,10 @@ public class DeploymentQueue {
 
     public int getQueueSize() {
         return queue.size();
+    }
+    
+    public int getAvailableSlots() {
+        return concurrentSlots.availablePermits();
     }
     
     public int getQueuePosition(Long deploymentId) {

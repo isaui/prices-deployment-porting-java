@@ -83,15 +83,20 @@ public class DeploymentServiceImpl implements DeploymentService {
         Sinks.Many<String> logSink = Sinks.many().replay().all();
         logSinks.put(dep.getId(), logSink);
 
-        int queueSize = deploymentQueue.getQueueSize();
-        if (queueSize > 0) {
-            int position = queueSize + 1; // Initial position
-            logSink.tryEmitNext(String.format("Deployment queued at position %d. Waiting for available slot...", position));
+        // Step 3: Enqueue AFTER DB commit so worker can find the entity
+        deploymentQueue.enqueue(dep, project, req);
+        
+        // Check if deployment will wait in queue (check AFTER enqueue)
+        int availableSlots = deploymentQueue.getAvailableSlots();
+        if (availableSlots > 0) {
+            logSink.tryEmitNext("Deployment queued. Starting shortly...");
+        } else {
+            // No available slots, deployment will wait
+            int queuePosition = deploymentQueue.getQueuePosition(dep.getId());
+            logSink.tryEmitNext(String.format("Deployment queued at position %d. Waiting for available slot...", queuePosition));
             
-            // Capture deployment ID for lambda (must be effectively final)
+            // Start heartbeat only for deployments that will wait
             final Long depId = dep.getId();
-            
-            // Start heartbeat to keep SSE connection alive while in queue
             AtomicInteger heartbeatCount = new AtomicInteger(0);
             ScheduledFuture<?> heartbeat = heartbeatScheduler.scheduleAtFixedRate(() -> {
                 try {
@@ -99,7 +104,7 @@ public class DeploymentServiceImpl implements DeploymentService {
                     if (current != null && current.getStatus() == DeploymentStatus.QUEUED) {
                         int currentPosition = deploymentQueue.getQueuePosition(depId);
                         if (currentPosition > 0) {
-                            int elapsed = heartbeatCount.incrementAndGet() * 30; // seconds
+                            int elapsed = heartbeatCount.incrementAndGet() * 15; // seconds
                             logSink.tryEmitNext(String.format("Queue position: %d | Elapsed: %ds", 
                                 currentPosition, elapsed));
                         }
@@ -116,12 +121,7 @@ public class DeploymentServiceImpl implements DeploymentService {
             }, 30, 30, TimeUnit.SECONDS);
             
             heartbeatTasks.put(depId, heartbeat);
-        } else {
-            logSink.tryEmitNext("Deployment queued. Starting shortly...");
         }
-
-        // Step 3: Enqueue AFTER DB commit so worker can find the entity
-        deploymentQueue.enqueue(dep, project, req);
 
         return dep;
     }

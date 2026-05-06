@@ -33,7 +33,7 @@ else
 fi
 
 projects_json=$($CLI projects --json 2>&1)
-slugs=$(echo "$projects_json" | jq -r --arg prefix "$FILTER" '.data[]?.slug | select(startswith($prefix))' | tr -d '\r\n' | tr '\n' ' ')
+slugs=$(echo "$projects_json" | jq -r --arg prefix "$FILTER" '.data[]?.slug | select(startswith($prefix))' | tr -d '\r')
 
 if [[ -z "$slugs" ]]; then
     echo "No matching projects found."
@@ -42,9 +42,9 @@ fi
 
 count=0
 fail=0
-for slug in $slugs; do
-    # Trim whitespace
-    slug=$(echo "$slug" | xargs)
+while IFS= read -r slug; do
+    # Skip empty lines
+    [[ -z "$slug" ]] && continue
     echo "  Attempting to delete: $slug"
     if output=$($CLI delete "$slug" -y 2>&1); then
         echo "  ✓ Deleted: $slug"
@@ -56,7 +56,7 @@ for slug in $slugs; do
     fi
     # Add small delay to avoid overwhelming the server
     sleep 1
-done
+done <<< "$slugs"
 
 echo
 echo "Deleted: $count"

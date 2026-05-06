@@ -88,13 +88,16 @@ public class DeploymentServiceImpl implements DeploymentService {
             int position = queueSize + 1; // Initial position
             logSink.tryEmitNext(String.format("Deployment queued at position %d. Waiting for available slot...", position));
             
+            // Capture deployment ID for lambda (must be effectively final)
+            final Long depId = dep.getId();
+            
             // Start heartbeat to keep SSE connection alive while in queue
             AtomicInteger heartbeatCount = new AtomicInteger(0);
             ScheduledFuture<?> heartbeat = heartbeatScheduler.scheduleAtFixedRate(() -> {
                 try {
-                    DeploymentHistory current = deploymentRepo.findById(dep.getId()).orElse(null);
+                    DeploymentHistory current = deploymentRepo.findById(depId).orElse(null);
                     if (current != null && current.getStatus() == DeploymentStatus.QUEUED) {
-                        int currentPosition = deploymentQueue.getQueuePosition(dep.getId());
+                        int currentPosition = deploymentQueue.getQueuePosition(depId);
                         if (currentPosition > 0) {
                             int elapsed = heartbeatCount.incrementAndGet() * 30; // seconds
                             logSink.tryEmitNext(String.format("Queue position: %d | Elapsed: %ds", 
@@ -102,17 +105,17 @@ public class DeploymentServiceImpl implements DeploymentService {
                         }
                     } else {
                         // Deployment started or finished, cancel heartbeat
-                        ScheduledFuture<?> task = heartbeatTasks.remove(dep.getId());
+                        ScheduledFuture<?> task = heartbeatTasks.remove(depId);
                         if (task != null) {
                             task.cancel(false);
                         }
                     }
                 } catch (Exception e) {
-                    log.warn("Heartbeat error for deployment {}: {}", dep.getId(), e.getMessage());
+                    log.warn("Heartbeat error for deployment {}: {}", depId, e.getMessage());
                 }
             }, 30, 30, TimeUnit.SECONDS);
             
-            heartbeatTasks.put(dep.getId(), heartbeat);
+            heartbeatTasks.put(depId, heartbeat);
         } else {
             logSink.tryEmitNext("Deployment queued. Starting shortly...");
         }

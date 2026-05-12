@@ -104,7 +104,7 @@ public class DeploymentServiceImpl implements DeploymentService {
                     if (current != null && current.getStatus() == DeploymentStatus.QUEUED) {
                         int currentPosition = deploymentQueue.getQueuePosition(depId);
                         if (currentPosition > 0) {
-                            int elapsed = heartbeatCount.incrementAndGet() * 15; // seconds
+                            int elapsed = heartbeatCount.incrementAndGet() * 30; // seconds
                             logSink.tryEmitNext(String.format("Queue position: %d | Elapsed: %ds", 
                                 currentPosition, elapsed));
                         }
@@ -118,7 +118,7 @@ public class DeploymentServiceImpl implements DeploymentService {
                 } catch (Exception e) {
                     log.warn("Heartbeat error for deployment {}: {}", depId, e.getMessage());
                 }
-            }, 30, 30, TimeUnit.SECONDS);
+            }, 0, 30, TimeUnit.SECONDS);
             
             heartbeatTasks.put(depId, heartbeat);
         }

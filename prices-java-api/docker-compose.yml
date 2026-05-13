@@ -333,6 +333,3 @@ networks:
   prices-proxy-network:
     driver: bridge
     name: prices-proxy-network
-    ipam:
-      config:
-        - subnet: 172.20.0.0/16

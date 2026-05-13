@@ -47,7 +47,6 @@ public class PrepareComposeStage implements PipelineStage {
 
     private void generateNew(DeploymentContext ctx, Path composePath) throws IOException {
         String slug = ctx.getProjectSlug();
-        String networkName = NamingUtils.networkName(slug);
         String backendContainer = NamingUtils.containerName("backend", slug);
         String frontendContainer = NamingUtils.containerName("frontend", slug);
 
@@ -66,7 +65,6 @@ public class PrepareComposeStage implements PipelineStage {
         sb.append("    env_file:\n");
         sb.append("      - .env\n");
         sb.append("    networks:\n");
-        sb.append("      - ").append(networkName).append("\n");
         sb.append("      - prices-proxy-network\n");
         sb.append("    extra_hosts:\n");
         sb.append("      - \"postgresql:").append(ctx.getDbHost()).append("\"\n");
@@ -94,7 +92,6 @@ public class PrepareComposeStage implements PipelineStage {
         sb.append("    image: ").append(frontendContainer).append(":latest\n");
         sb.append("    container_name: ").append(frontendContainer).append("\n");
         sb.append("    networks:\n");
-        sb.append("      - ").append(networkName).append("\n");
         sb.append("      - prices-proxy-network\n");
         sb.append("    labels:\n");
         sb.append("      - \"traefik.enable=true\"\n");
@@ -105,8 +102,6 @@ public class PrepareComposeStage implements PipelineStage {
 
         // Networks
         sb.append("networks:\n");
-        sb.append("  ").append(networkName).append(":\n");
-        sb.append("    driver: bridge\n");
         sb.append("  prices-proxy-network:\n");
         sb.append("    external: true\n");
 
@@ -132,21 +127,11 @@ public class PrepareComposeStage implements PipelineStage {
 
         String slug = ctx.getProjectSlug();
 
-        // Add prices-proxy-network, extra_hosts, and traefik labels to services
+        // Add prices-proxy-network only to exposed services; keep internal user services private.
         for (Map.Entry<String, Object> entry : services.entrySet()) {
             String serviceName = entry.getKey();
             Map<String, Object> service = (Map<String, Object>) entry.getValue();
             if (service == null) continue;
-
-            // Add network
-            List<String> networks = (List<String>) service.get("networks");
-            if (networks == null) {
-                networks = new ArrayList<>();
-                service.put("networks", networks);
-            }
-            if (!networks.contains("prices-proxy-network")) {
-                networks.add("prices-proxy-network");
-            }
 
             // Add extra_hosts for postgresql
             if (ctx.getDbHost() != null) {
@@ -163,6 +148,7 @@ public class PrepareComposeStage implements PipelineStage {
 
             // Add traefik labels for 'backend' or 'frontend' services
             if (serviceName.equals("backend")) {
+                addProxyNetwork(service);
                 List<String> labels = new ArrayList<>();
                 labels.add("traefik.enable=true");
                 labels.add("traefik.http.routers.backend-" + slug + ".rule=" + getBackendHostRule(ctx));
@@ -171,6 +157,7 @@ public class PrepareComposeStage implements PipelineStage {
                 service.put("labels", labels);
                 ctx.addLog("Added traefik labels to backend service");
             } else if (serviceName.equals("frontend")) {
+                addProxyNetwork(service);
                 List<String> labels = new ArrayList<>();
                 labels.add("traefik.enable=true");
                 labels.add("traefik.http.routers.frontend-" + slug + ".rule=" + getFrontendHostRule(ctx));
@@ -230,6 +217,18 @@ public class PrepareComposeStage implements PipelineStage {
         }
         // make service not exposed if no host is set
         return hosts.isEmpty() ? "Host(`frontend-" + ctx.getProjectSlug() + ".localhost`)" : String.join(" || ", hosts);
+    }
+
+    @SuppressWarnings("unchecked")
+    private void addProxyNetwork(Map<String, Object> service) {
+        List<String> networks = (List<String>) service.get("networks");
+        if (networks == null) {
+            networks = new ArrayList<>();
+            service.put("networks", networks);
+        }
+        if (!networks.contains("prices-proxy-network")) {
+            networks.add("prices-proxy-network");
+        }
     }
 
     private void writeEnvFile(DeploymentContext ctx) throws IOException {

@@ -327,6 +327,12 @@ services:
 networks:
   prices-network:
     driver: bridge
+    ipam:
+      config:
+        - subnet: 172.30.0.0/23
   prices-proxy-network:
     driver: bridge
     name: prices-proxy-network
+    ipam:
+      config:
+        - subnet: 172.30.2.0/23

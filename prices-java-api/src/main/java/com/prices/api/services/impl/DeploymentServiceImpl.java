@@ -150,10 +150,7 @@ public class DeploymentServiceImpl implements DeploymentService {
     public Publisher<Event<String>> getLogEvents(Long deploymentId) {
         Sinks.Many<String> sink = logSinks.get(deploymentId);
         if (sink == null) {
-            // Deployment not active or finished
-            return Flux.just(
-                Event.of("{\"status\": \"finished\"}").name("finished")
-            );
+            return getPersistedLogEvents(deploymentId);
         }
         
         return Flux.concat(
@@ -161,6 +158,23 @@ public class DeploymentServiceImpl implements DeploymentService {
             sink.asFlux().map(msg -> Event.of(msg).name("log")),
             Flux.just(Event.of("{\"status\": \"finished\"}").name("finished"))
         );
+    }
+
+    private Publisher<Event<String>> getPersistedLogEvents(Long deploymentId) {
+        return Flux.defer(() -> {
+            Optional<DeploymentHistory> deploymentOpt = deploymentRepo.findById(deploymentId);
+            String logs = deploymentOpt.map(DeploymentHistory::getLogs).orElse(null);
+
+            if (logs == null || logs.isBlank()) {
+                return Flux.just(Event.of("{\"status\": \"finished\"}").name("finished"));
+            }
+
+            return Flux.concat(
+                    Flux.just(Event.of("{\"status\": \"connected\"}").name("connected")),
+                    Flux.fromStream(logs.lines()).map(msg -> Event.of(msg).name("log")),
+                    Flux.just(Event.of("{\"status\": \"finished\"}").name("finished"))
+            );
+        });
     }
 
     private void executeDeployment(DeploymentHistory dep, Project project, DeployRequest req) {

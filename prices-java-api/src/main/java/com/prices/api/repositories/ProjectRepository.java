@@ -26,7 +26,16 @@ public interface ProjectRepository extends CrudRepository<Project, Long> {
 
     @Query("""
             SELECT p FROM Project p
-            WHERE (:currentProjectId IS NULL OR p.id <> :currentProjectId)
+            WHERE p.defaultFrontendUrl = :domain OR
+                p.customFrontendUrl = :domain OR
+                p.defaultBackendUrl = :domain OR
+                p.customBackendUrl = :domain
+            """)
+    Optional<Project> findAnyProjectUsingUrl(String domain);
+
+    @Query("""
+            SELECT p FROM Project p
+            WHERE p.id <> :currentProjectId
             AND (
                 p.defaultFrontendUrl = :domain OR
                 p.customFrontendUrl = :domain OR
@@ -34,7 +43,7 @@ public interface ProjectRepository extends CrudRepository<Project, Long> {
                 p.customBackendUrl = :domain
             )
             """)
-    Optional<Project> findAnyProjectUsingUrl(String domain, Long currentProjectId);
+    Optional<Project> findAnyOtherProjectUsingUrl(String domain, Long currentProjectId);
 
     @Join(value = "user", type = Join.Type.LEFT_FETCH)
     List<Project> findAll();

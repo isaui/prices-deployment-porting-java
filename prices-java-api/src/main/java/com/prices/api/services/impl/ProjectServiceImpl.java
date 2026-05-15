@@ -32,6 +32,7 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Slf4j
 @Singleton
@@ -460,7 +461,11 @@ public class ProjectServiceImpl implements ProjectService {
             return;
         }
 
-        if (projectRepo.findAnyProjectUsingUrl(domain, currentProjectId).isPresent()) {
+        Optional<Project> conflictingProject = currentProjectId == null
+                ? projectRepo.findAnyProjectUsingUrl(domain)
+                : projectRepo.findAnyOtherProjectUsingUrl(domain, currentProjectId);
+
+        if (conflictingProject.isPresent()) {
             throw new IllegalArgumentException(
                     String.format("Custom %s URL '%s' is already used by another project", target, domain));
         }

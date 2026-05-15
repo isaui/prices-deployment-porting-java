@@ -80,7 +80,7 @@ public class ExtractStage implements PipelineStage {
         boolean backendExists = Files.exists(backendPath) && Files.isDirectory(backendPath);
 
         if (!frontendExists && !backendExists) {
-            throw new RuntimeException("Invalid artifact: frontend folder does not exist or backend folder does not exist");
+            throw new RuntimeException("Invalid artifact: frontend folder is empty or backend folder is empty");
         }
 
         if (frontendExists) {

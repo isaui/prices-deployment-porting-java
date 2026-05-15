@@ -34,6 +34,8 @@ public class ProjectHandler {
         try {
             Project project = projectService.create(userId, req);
             return HttpResponse.status(HttpStatus.CREATED).body(ApiResponse.success("Project created successfully", MapperUtils.toProjectResponse(project)));
+        } catch (IllegalArgumentException e) {
+            return HttpResponse.badRequest(ErrorResponse.error(e.getMessage()));
         } catch (Exception e) {
             return HttpResponse.serverError(ErrorResponse.error("Failed to create project"));
         }
@@ -97,6 +99,8 @@ public class ProjectHandler {
             }
             Project updated = projectService.update(id, req);
             return HttpResponse.ok(ApiResponse.success("Project updated successfully", MapperUtils.toProjectResponse(updated)));
+        } catch (IllegalArgumentException e) {
+            return HttpResponse.badRequest(ErrorResponse.error(e.getMessage()));
         } catch (Exception e) {
             return HttpResponse.serverError(ErrorResponse.error("Failed to update project"));
         }

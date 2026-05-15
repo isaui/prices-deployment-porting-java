@@ -225,20 +225,37 @@ public class DeploymentServiceImpl implements DeploymentService {
 
         } catch (Exception e) {
             log.error("Deployment failed", e);
+            String failureMessage = describeException(e);
             pipeline.rollback(ctx);
             updateDeploymentStatus(dep, DeploymentStatus.FAILED,
-                    String.join("\n", ctx.getLogs()) + "\nError: " + e.getMessage());
+                    String.join("\n", ctx.getLogs()) + "\nError: " + failureMessage);
 
             project.setStatus("failed");
             projectRepo.update(project);
 
             // Emit error to log stream
-            logSink.tryEmitNext("Deployment failed: " + e.getMessage());
+            logSink.tryEmitNext("Deployment failed.");
         } finally {
             // Close sink
             logSink.tryEmitComplete();
             logSinks.remove(dep.getId());
         }
+    }
+
+    private String describeException(Throwable throwable) {
+        Throwable cause = throwable;
+        while (cause.getCause() != null) {
+            cause = cause.getCause();
+        }
+
+        String message = cause.getMessage();
+        if (message == null || message.isBlank()) {
+            message = throwable.getMessage();
+        }
+        if (message == null || message.isBlank()) {
+            message = cause.getClass().getSimpleName();
+        }
+        return message;
     }
 
     // Since we are updating the entity in a separate thread/transaction, we need to

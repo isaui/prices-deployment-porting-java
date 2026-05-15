@@ -24,7 +24,7 @@ public class DeploymentPipeline {
                 executedStages.add(stage);
                 ctx.addLog(String.format("Completed stage: %s", stage.name()));
             } catch (Exception e) {
-                ctx.addLog(String.format("Stage %s failed: %s", stage.name(), e.getMessage()));
+                ctx.addLog(String.format("Stage %s failed: %s", stage.name(), describeException(e)));
                 throw e;
             }
         }
@@ -40,9 +40,25 @@ public class DeploymentPipeline {
             try {
                 stage.rollback(ctx);
             } catch (Exception e) {
-                ctx.addLog(String.format("Rollback failed for stage %s: %s", stage.name(), e.getMessage()));
+                ctx.addLog(String.format("Rollback failed for stage %s: %s", stage.name(), describeException(e)));
             }
         }
         ctx.addLog("Rollback completed");
+    }
+
+    private String describeException(Throwable throwable) {
+        Throwable cause = throwable;
+        while (cause.getCause() != null) {
+            cause = cause.getCause();
+        }
+
+        String message = cause.getMessage();
+        if (message == null || message.isBlank()) {
+            message = throwable.getMessage();
+        }
+        if (message == null || message.isBlank()) {
+            message = cause.getClass().getSimpleName();
+        }
+        return message;
     }
 }

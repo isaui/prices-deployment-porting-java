@@ -41,7 +41,7 @@ public class ExtractStage implements PipelineStage {
 
         // 2. Extract zip from ArtifactData
         if (ctx.getArtifactData() == null || ctx.getArtifactData().length == 0) {
-            throw new RuntimeException("No artifact data provided");
+            throw new RuntimeException("Invalid artifact: no upload data was received");
         }
 
         int fileCount = 0;
@@ -80,7 +80,7 @@ public class ExtractStage implements PipelineStage {
         boolean backendExists = Files.exists(backendPath) && Files.isDirectory(backendPath);
 
         if (!frontendExists && !backendExists) {
-            throw new RuntimeException("Invalid project structure: neither frontend/ nor backend/ folder found");
+            throw new RuntimeException("Invalid artifact: frontend folder does not exist or backend folder does not exist");
         }
 
         if (frontendExists) {

@@ -68,6 +68,9 @@ public class InternalController {
                     "projectId", saved.getId(),
                     "slug", saved.getSlug()
             )));
+        } catch (IllegalArgumentException e) {
+            log.warn("Invalid internal project request: {}", e.getMessage());
+            return HttpResponse.badRequest(ApiResponse.error(e.getMessage()));
         } catch (Exception e) {
             log.error("Failed to create project", e);
             return HttpResponse.serverError(ApiResponse.error("Failed to create project: " + e.getMessage()));

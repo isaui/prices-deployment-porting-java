@@ -54,15 +54,18 @@ public class ProjectServiceImpl implements ProjectService {
         String slug = SlugUtils.generateSlug(req.getName());
         String parentDomain = EnvUtils.getParentDomain();
 
-        String customFrontendURL = req.getCustomFrontendUrl() != null && !req.getCustomFrontendUrl().isEmpty()
-                ? req.getCustomFrontendUrl()
-                : null;
-        String customBackendURL = req.getCustomBackendUrl() != null && !req.getCustomBackendUrl().isEmpty()
-                ? req.getCustomBackendUrl()
-                : null;
-        String customMonitoringURL = req.getCustomMonitoringUrl() != null && !req.getCustomMonitoringUrl().isEmpty()
-                ? req.getCustomMonitoringUrl()
-                : null;
+        String customFrontendURL = normalizeCustomDomain(req.getCustomFrontendUrl());
+        String customBackendURL = normalizeCustomDomain(req.getCustomBackendUrl());
+        String customMonitoringURL = normalizeCustomDomain(req.getCustomMonitoringUrl());
+        validateDistinctCustomDomains(customFrontendURL, customBackendURL);
+        validateCustomDomainAgainstProjectUrls(customFrontendURL, "frontend",
+                "backend-" + slug + "." + parentDomain,
+                customBackendURL);
+        validateCustomDomainAgainstProjectUrls(customBackendURL, "backend",
+                "frontend-" + slug + "." + parentDomain,
+                customFrontendURL);
+        validateCustomDomainAvailable(customFrontendURL, "frontend", null);
+        validateCustomDomainAvailable(customBackendURL, "backend", null);
 
         Project project = new Project();
         project.setName(req.getName());
@@ -126,6 +129,17 @@ public class ProjectServiceImpl implements ProjectService {
     @Transactional
     public Project update(Long id, UpdateProjectRequest req) {
         Project project = getById(id);
+        String customFrontendURL = normalizeCustomDomain(req.getCustomFrontendUrl());
+        String customBackendURL = normalizeCustomDomain(req.getCustomBackendUrl());
+        String effectiveCustomFrontendURL = customFrontendURL != null ? customFrontendURL : project.getCustomFrontendUrl();
+        String effectiveCustomBackendURL = customBackendURL != null ? customBackendURL : project.getCustomBackendUrl();
+        validateDistinctCustomDomains(effectiveCustomFrontendURL, effectiveCustomBackendURL);
+        validateCustomDomainAgainstProjectUrls(customFrontendURL, "frontend",
+                project.getDefaultBackendUrl(), effectiveCustomBackendURL);
+        validateCustomDomainAgainstProjectUrls(customBackendURL, "backend",
+                project.getDefaultFrontendUrl(), effectiveCustomFrontendURL);
+        validateCustomDomainAvailable(customFrontendURL, "frontend", id);
+        validateCustomDomainAvailable(customBackendURL, "backend", id);
 
         if (req.getName() != null && !req.getName().isEmpty()) {
             project.setName(req.getName());
@@ -139,7 +153,7 @@ public class ProjectServiceImpl implements ProjectService {
 
         // Frontend custom URL
         if (req.getCustomFrontendUrl() != null && !req.getCustomFrontendUrl().isEmpty()) {
-            project.setCustomFrontendUrl(req.getCustomFrontendUrl());
+            project.setCustomFrontendUrl(customFrontendURL);
             if (req.getIsCustomFrontendActive() == null) {
                 project.setCustomFrontendActive(true);
             }
@@ -153,7 +167,7 @@ public class ProjectServiceImpl implements ProjectService {
 
         // Backend custom URL
         if (req.getCustomBackendUrl() != null && !req.getCustomBackendUrl().isEmpty()) {
-            project.setCustomBackendUrl(req.getCustomBackendUrl());
+            project.setCustomBackendUrl(customBackendURL);
             if (req.getIsCustomBackendActive() == null) {
                 project.setCustomBackendActive(true);
             }
@@ -167,7 +181,7 @@ public class ProjectServiceImpl implements ProjectService {
 
         // Monitoring custom URL
         if (req.getCustomMonitoringUrl() != null && !req.getCustomMonitoringUrl().isEmpty()) {
-            project.setCustomMonitoringUrl(req.getCustomMonitoringUrl());
+            project.setCustomMonitoringUrl(normalizeCustomDomain(req.getCustomMonitoringUrl()));
             if (req.getIsCustomMonitoringActive() == null) {
                 project.setCustomMonitoringActive(true);
             }
@@ -414,12 +428,76 @@ public class ProjectServiceImpl implements ProjectService {
         return new String[] { "docker-compose" };
     }
 
+    private String normalizeCustomDomain(String value) {
+        if (value == null || value.trim().isEmpty()) {
+            return null;
+        }
+
+        String domain = value.trim()
+                .replaceFirst("(?i)^https?://", "")
+                .replaceFirst("/.*$", "")
+                .replaceAll("^\\.+|\\.+$", "");
+
+        if (domain.isEmpty()) {
+            return null;
+        }
+
+        if (!domain.contains(".")) {
+            domain = domain + "." + EnvUtils.getParentDomain();
+        }
+
+        return domain.toLowerCase();
+    }
+
+    private void validateDistinctCustomDomains(String customFrontendURL, String customBackendURL) {
+        if (customFrontendURL != null && customFrontendURL.equals(customBackendURL)) {
+            throw new IllegalArgumentException("Custom frontend URL and custom backend URL must be different");
+        }
+    }
+
+    private void validateCustomDomainAvailable(String domain, String target, Long currentProjectId) {
+        if (domain == null) {
+            return;
+        }
+
+        if (projectRepo.findAnyProjectUsingUrl(domain, currentProjectId).isPresent()) {
+            throw new IllegalArgumentException(
+                    String.format("Custom %s URL '%s' is already used by another project", target, domain));
+        }
+    }
+
+    private void validateCustomDomainAgainstProjectUrls(
+            String domain,
+            String target,
+            String otherDefaultURL,
+            String otherCustomURL) {
+        if (domain == null) {
+            return;
+        }
+
+        if (domain.equals(otherDefaultURL) || domain.equals(otherCustomURL)) {
+            throw new IllegalArgumentException(
+                    String.format("Custom %s URL '%s' conflicts with another URL in this project", target, domain));
+        }
+    }
+
     @Override
     @Transactional
     public Project createInternalProject(String name, String productLine, String customFrontendUrl, String customBackendUrl,
                                           Integer frontendPort, Integer backendPort) {
         String slug = SlugUtils.generateSlug(name);
         String parentDomain = EnvUtils.getParentDomain();
+        String normalizedCustomFrontendUrl = normalizeCustomDomain(customFrontendUrl);
+        String normalizedCustomBackendUrl = normalizeCustomDomain(customBackendUrl);
+        validateDistinctCustomDomains(normalizedCustomFrontendUrl, normalizedCustomBackendUrl);
+        validateCustomDomainAgainstProjectUrls(normalizedCustomFrontendUrl, "frontend",
+                "backend-" + slug + "." + parentDomain,
+                normalizedCustomBackendUrl);
+        validateCustomDomainAgainstProjectUrls(normalizedCustomBackendUrl, "backend",
+                "frontend-" + slug + "." + parentDomain,
+                normalizedCustomFrontendUrl);
+        validateCustomDomainAvailable(normalizedCustomFrontendUrl, "frontend", null);
+        validateCustomDomainAvailable(normalizedCustomBackendUrl, "backend", null);
 
         Project project = new Project();
         project.setName(name);
@@ -431,15 +509,15 @@ public class ProjectServiceImpl implements ProjectService {
 
         // Frontend URLs
         project.setDefaultFrontendUrl("frontend-" + slug + "." + parentDomain);
-        project.setCustomFrontendUrl(customFrontendUrl);
+        project.setCustomFrontendUrl(normalizedCustomFrontendUrl);
         project.setDefaultFrontendActive(true);
-        project.setCustomFrontendActive(customFrontendUrl != null && !customFrontendUrl.isEmpty());
+        project.setCustomFrontendActive(normalizedCustomFrontendUrl != null);
 
         // Backend URLs
         project.setDefaultBackendUrl("backend-" + slug + "." + parentDomain);
-        project.setCustomBackendUrl(customBackendUrl);
+        project.setCustomBackendUrl(normalizedCustomBackendUrl);
         project.setDefaultBackendActive(true);
-        project.setCustomBackendActive(customBackendUrl != null && !customBackendUrl.isEmpty());
+        project.setCustomBackendActive(normalizedCustomBackendUrl != null);
 
         // Monitoring URLs
         project.setDefaultMonitoringUrl("monitoring-" + slug + "." + parentDomain);
